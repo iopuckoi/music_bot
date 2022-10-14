@@ -36,8 +36,10 @@ def find_version(version_file: str) -> str:
 
 
 requirements = [
-    "discord.py==2.01",
+    "discord.py==2.0.1",
     "google-api-python-client==2.63.0",
+    "google-auth-oauthlib==0.5.3",
+    "google-auth-httplib2==0.1.0",
     "python-dotenv==0.21.0",
 ]
 
@@ -45,6 +47,7 @@ setup(
     name="music-bot",
     description="Music bot for Discord.",
     packages=find_packages(),
-    install_packages=requirements,
+    install_requires=requirements,
+    setup_requires=requirements,
     version=find_version("__version__.py"),
 )

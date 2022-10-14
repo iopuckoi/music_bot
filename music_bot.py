@@ -6,6 +6,8 @@ import sys
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+import googleapiclient.discovery
+
 
 # import requests
 # def handler(pd: "pipedream"):
@@ -73,6 +75,7 @@ if __name__ == "__main__":
     load_dotenv()
     TOKEN = str(os.getenv("DISCORD_TOKEN"))
     GUILD = str(os.getenv("DISCORD_GUILD"))
+    DEVELOPER_KEY = str(os.getenv("GOOGLE_API_TOKEN"))
 
     if not TOKEN:
         sys.exit("DISCORD_TOKEN missing from .env file.")
@@ -80,10 +83,34 @@ if __name__ == "__main__":
     if not GUILD:
         sys.exit("DISCORD_GUILD missing from .env file.")
 
+    if not DEVELOPER_KEY:
+        sys.exit("GOOGLE_API_TOKEN missing from .env file.")
+
+    # YouTube API information.
+    api_service_name = "youtube"
+    api_version = "v3"
+
     intents = discord.Intents.default()
     intents.members = True
     intents.message_content = True
     intents.presences = True
 
-    client = PuckBotClient(intents=intents)
-    client.run(TOKEN)
+    # client = PuckBotClient(intents=intents, command_prefix="/")
+    # client.run(TOKEN)
+
+    youtube = googleapiclient.discovery.build(
+        api_service_name, api_version, developerKey = DEVELOPER_KEY)
+
+    # 'request' variable is the only thing you must change
+    # depending on the resource and method you need to use
+    # in your query
+    playlist_response = youtube.playlistItems().list(
+        part="snippet,contentDetails,id,status",
+        playlistId=str(os.getenv("GAME_NIGHT"))
+    )
+    
+    # Query execution
+    response = playlist_response.execute()
+    # Print the results
+    import pprint
+    pprint.pprint(response)
