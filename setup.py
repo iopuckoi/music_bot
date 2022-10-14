@@ -41,6 +41,7 @@ requirements = [
     "google-auth-oauthlib==0.5.3",
     "google-auth-httplib2==0.1.0",
     "python-dotenv==0.21.0",
+    "youtube_dl==2021.12.17",
 ]
 
 setup(

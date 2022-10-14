@@ -8,10 +8,12 @@ from os.path import dirname
 # Third party imports.
 import discord
 import googleapiclient.discovery
+import youtube_dl
 from discord.ext import commands
 from dotenv import load_dotenv
 
 # https://medium.com/pythonland/build-a-discord-bot-in-python-that-plays-music-and-send-gifs-856385e605a1
+
 
 # import requests
 # def handler(pd: "pipedream"):
@@ -40,11 +42,6 @@ class PuckBotClient(commands.Bot):
 
     def __init__(self, *args, **kwargs):
         super(PuckBotClient, self).__init__(*args, **kwargs)
-        self.youtube = googleapiclient.discovery.build(
-            config["api_service_name"],
-            config["api_version"],
-            developerKey=config["developer_key"],
-        )
 
     async def on_ready(self) -> None:
         """Override discord.Client on_ready method.  Called when the client is done
@@ -70,11 +67,64 @@ class PuckBotClient(commands.Bot):
         Args:
             message (discord.Message): The current message.
         """
-        if message.author == client.user:
+        if message.author == self.user:
             return
 
         if message.content == "test":
             await message.channel.send(f"Shut up {message.author}, you greasy Boglim!")
+
+
+########################################################################################
+class PuckCog(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.voice_states = {}
+        self.youtube = googleapiclient.discovery.build(
+            config["api_service_name"],
+            config["api_version"],
+            developerKey=config["developer_key"],
+        )
+
+    @commands.command(name="play_song", help="To play song")
+    async def play(self, ctx: commands.Context, url):
+        try:
+            server = ctx.message.guild
+            voice_channel = server.voice_client
+
+            async with ctx.typing():
+                filename = await YTDLSource.from_url(url, loop=bot.loop)
+                voice_channel.play(
+                    discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=filename)
+                )
+            await ctx.send("**Now playing:** {}".format(filename))
+        except:
+            await ctx.send("The bot is not connected to a voice channel.")
+
+    @commands.command(name="pause", help="This command pauses the song")
+    async def pause(self, ctx: commands.Context):
+        voice_client = ctx.message.guild.voice_client
+        if voice_client.is_playing():
+            await voice_client.pause()
+        else:
+            await ctx.send("The bot is not playing anything at the moment.")
+
+    @commands.command(name="resume", help="Resumes the song")
+    async def resume(self, ctx: commands.Context):
+        voice_client = ctx.message.guild.voice_client
+        if voice_client.is_paused():
+            await voice_client.resume()
+        else:
+            await ctx.send(
+                "The bot was not playing anything before this. Use play_song command"
+            )
+
+    @commands.command(name="stop", help="Stops the song")
+    async def stop(self, ctx: commands.Context):
+        voice_client = ctx.message.guild.voice_client
+        if voice_client.is_playing():
+            await voice_client.stop()
+        else:
+            await ctx.send("The bot is not playing anything at the moment.")
 
 
 ########################################################################################
@@ -146,48 +196,8 @@ if __name__ == "__main__":
 
     # Create and run the Discord client.
     bot = PuckBotClient(intents=intents, command_prefix=config["command_prefix"])
+    # TODO : place after all commands
     bot.run(config["token"])
-
-    # @bot.command(name="play_song", help="To play song")
-    # async def play(ctx, url):
-    #     try:
-    #         server = ctx.message.guild
-    #         voice_channel = server.voice_client
-
-    #         async with ctx.typing():
-    #             filename = await YTDLSource.from_url(url, loop=bot.loop)
-    #             voice_channel.play(
-    #                 discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=filename)
-    #             )
-    #         await ctx.send("**Now playing:** {}".format(filename))
-    #     except:
-    #         await ctx.send("The bot is not connected to a voice channel.")
-
-    # @bot.command(name="pause", help="This command pauses the song")
-    # async def pause(ctx):
-    #     voice_client = ctx.message.guild.voice_client
-    #     if voice_client.is_playing():
-    #         await voice_client.pause()
-    #     else:
-    #         await ctx.send("The bot is not playing anything at the moment.")
-
-    # @bot.command(name="resume", help="Resumes the song")
-    # async def resume(ctx):
-    #     voice_client = ctx.message.guild.voice_client
-    #     if voice_client.is_paused():
-    #         await voice_client.resume()
-    #     else:
-    #         await ctx.send(
-    #             "The bot was not playing anything before this. Use play_song command"
-    #         )
-
-    # @bot.command(name="stop", help="Stops the song")
-    # async def stop(ctx):
-    #     voice_client = ctx.message.guild.voice_client
-    #     if voice_client.is_playing():
-    #         await voice_client.stop()
-    #     else:
-    #         await ctx.send("The bot is not playing anything at the moment.")
 
     # youtube = googleapiclient.discovery.build(
     #     config["api_service_name"],
