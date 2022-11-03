@@ -1,5 +1,6 @@
-from discord.ext import commands
+# Third party imports.
 import googleapiclient.discovery
+from discord.ext import commands
 
 
 ########################################################################################
@@ -30,7 +31,7 @@ class PuckCog(commands.Cog):
 
     @commands.command(name="fart", help="This command farts")
     async def fart(self, ctx: commands.Context):
-        await ctx.message.channel.send(f"Available playlists - {keys(self.config['playlists'])}")
+        await ctx.send(f"Available playlists - {keys(self.bot.config['playlists'])}")
 
     @commands.command(name="pause", help="This command pauses the song")
     async def pause(self, ctx: commands.Context):

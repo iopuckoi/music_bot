@@ -43,7 +43,6 @@ class PuckBotClient(commands.Bot):
 
     def __init__(self, *args, **kwargs):
         super(PuckBotClient, self).__init__(*args, **kwargs)
-        self.config = config
 
     async def on_ready(self) -> None:
         """Override discord.Client on_ready method.  Called when the client is done
@@ -74,7 +73,6 @@ class PuckBotClient(commands.Bot):
 
         if message.content == "test":
             await message.channel.send(f"Shut up {message.author}, you greasy Boglim!")
-
 
 
 ########################################################################################
@@ -127,11 +125,15 @@ def get_playlists() -> dict:
 
             sys.exit("Aborting bot!!!")
 
+
 async def load_extensions(bot):
+    logger.debug("Loading extensions:")
     for filename in os.listdir("./cogs"):
         if filename.endswith(".py"):
             # cut off the .py from the file name
+            logger.debug(f"  ...loading cog : {filename}")
             await bot.load_extension(f"cogs.{filename[:-3]}")
+
 
 ########################################################################################
 #                                 Script entrypoint.                                   #
@@ -151,6 +153,8 @@ if __name__ == "__main__":
 
     # Create and run the Discord client.
     bot = PuckBotClient(intents=intents, command_prefix=config["command_prefix"])
+    bot.config = config
+
     async def main():
         async with bot:
             # bot.loop.create_task(background_task())
@@ -158,27 +162,27 @@ if __name__ == "__main__":
             await bot.start(config["token"])
 
     asyncio.run(main())
+# TODO: readme  https://gist.github.com/cyphunk/dfceef02f5ad7b20df6b389aa777ec87
+# await setup(bot)
+# bot.run(config["token"])
 
-    # await setup(bot)
-    # bot.run(config["token"])
+# youtube = googleapiclient.discovery.build(
+#     config["api_service_name"],
+#     config["api_version"],
+#     developerKey=config["developer_key"],
+# )
 
-    # youtube = googleapiclient.discovery.build(
-    #     config["api_service_name"],
-    #     config["api_version"],
-    #     developerKey=config["developer_key"],
-    # )
+# 'request' variable is the only thing you must change
+# depending on the resource and method you need to use
+# in your query
+# playlist_response = youtube.playlistItems().list(
+#     part="snippet,contentDetails,id,status", playlistId=str(os.getenv("GAME_NIGHT"))
+# )
 
-    # 'request' variable is the only thing you must change
-    # depending on the resource and method you need to use
-    # in your query
-    # playlist_response = youtube.playlistItems().list(
-    #     part="snippet,contentDetails,id,status", playlistId=str(os.getenv("GAME_NIGHT"))
-    # )
+# Query execution
+# response = playlist_response.execute()
+# Print the results
+# Standard library imports.
+# import pprint
 
-    # Query execution
-    # response = playlist_response.execute()
-    # Print the results
-    # Standard library imports.
-    # import pprint
-
-    # pprint.pprint(response)
+# pprint.pprint(response)
