@@ -65,5 +65,6 @@ class PuckCog(commands.Cog):
     #         await ctx.send("The bot is not playing anything at the moment.")
 
 
-async def setup(bot):
+async def setup(bot: PuckBotClient):
+    bot.logger.info("Finishing PuckCog setup...")
     await bot.add_cog(PuckCog(bot))
