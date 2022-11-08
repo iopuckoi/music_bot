@@ -1,17 +1,16 @@
 # Standard library imports.
 import asyncio
-import json
 import logging
-import os
-import sys
 from os.path import dirname
 
 # Third party imports.
 import discord
-import googleapiclient.discovery
-import youtube_dl
-from discord.ext import commands
-from dotenv import load_dotenv
+from music_bot.client import PuckBotClient
+from music_bot.common.utils import (
+    get_config,
+    load_extensions,
+)
+from music_bot.formatter import Formatter
 
 # https://medium.com/pythonland/build-a-discord-bot-in-python-that-plays-music-and-send-gifs-856385e605a1
 
@@ -36,114 +35,25 @@ from dotenv import load_dotenv
 #     return r.json()
 
 ########################################################################################
-#                                  Custom Classes.                                     #
-########################################################################################
-class PuckBotClient(commands.Bot):
-    """Subclass commands.Bot clas."""
-
-    def __init__(self, *args, **kwargs):
-        super(PuckBotClient, self).__init__(*args, **kwargs)
-
-    async def on_ready(self) -> None:
-        """Override discord.Client on_ready method.  Called when the client is done
-        preparing the data received from Discord. Usually after login is successful
-        and the Client.guilds and co. are filled up.
-        """
-        guild = discord.utils.get(self.guilds, name=config["guild"])
-        print(
-            f"{self.user} is connected to the following guild:\n"
-            f"{guild.name}(id: {guild.id})"
-        )
-
-        members = "\n - ".join([member.name for member in guild.members])
-        print(f"Guild Members:\n - {members}")
-
-    # async def on_member_join(member):
-    #     await member.create_dm()
-    #     await member.dm_channel.send(f"Hi {member.name}, you greasy Boglim!")
-
-    async def on_message(self, message: discord.Message) -> None:
-        """Override discord.Client on_message method.  Called when a Message is received.
-
-        Args:
-            message (discord.Message): The current message.
-        """
-        if message.author == self.user:
-            return
-
-        if message.content == "test":
-            await message.channel.send(f"Shut up {message.author}, you greasy Boglim!")
-
-
-########################################################################################
-#                              Function definitions.                                   #
-########################################################################################
-def get_config() -> dict:
-    # Load all environment variables from local .env file.
-    load_dotenv()
-    token = str(os.getenv("DISCORD_TOKEN"))
-    guild = str(os.getenv("DISCORD_GUILD"))
-    developer_key = str(os.getenv("GOOGLE_API_TOKEN"))
-
-    # Validate all necessary variables are present.
-    if not token:
-        sys.exit("DISCORD_TOKEN missing from .env file.")
-
-    if not guild:
-        sys.exit("DISCORD_GUILD missing from .env file.")
-
-    if not developer_key:
-        sys.exit("GOOGLE_API_TOKEN missing from .env file.")
-
-    return {
-        "command_prefix": "/",
-        # Environment variables.
-        "developer_key": developer_key,
-        "guild": guild,
-        "token": token,
-        # YouTube API information.
-        "api_service_name": "youtube",
-        "api_version": "v3",
-        # Get and store all playlsits.
-        "playlists": get_playlists(),
-    }
-
-
-########################################################################################
-def get_playlists() -> dict:
-    with open(
-        file=f"{dirname(__file__)}/playlists.json",
-        mode="r",
-        encoding="utf-8",
-    ) as playlists:
-        try:
-            return json.loads(playlists.read())
-
-        except Exception as err:
-            logger.error("   Error loading playlist file as json:")
-            logger.error(f"    {err}")
-
-            sys.exit("Aborting bot!!!")
-
-
-async def load_extensions(bot):
-    logger.debug("Loading extensions:")
-    for filename in os.listdir("./cogs"):
-        if filename.endswith(".py"):
-            # cut off the .py from the file name
-            logger.debug(f"  ...loading cog : {filename}")
-            await bot.load_extension(f"cogs.{filename[:-3]}")
 
 
 ########################################################################################
 #                                 Script entrypoint.                                   #
 ########################################################################################
 if __name__ == "__main__":
-    # Configure logger for the script.
-    logger = logging.getLogger()
-
     # Get all config and environment variables.
-    config = get_config()
+    config = get_config(f"{dirname(__file__)}/.env")
+
+    # Configure logger for the script.
+    logging.getLogger("asyncio").setLevel(logging.ERROR)
+    logging.getLogger("googleapicliet.discovery").setLevel(logging.ERROR)
+    logging.getLogger("googleapicliet.discovery_cache").setLevel(logging.ERROR)
+    logger = logging.getLogger()
+    logger.setLevel(config["log_level"])
+    streamHandler = logging.StreamHandler()
+    streamHandler.setLevel(config["log_level"])
+    streamHandler.setFormatter(Formatter())
+    logger.addHandler(streamHandler)
 
     # Initialize intents for Discord.
     intents = discord.Intents.default()
@@ -152,14 +62,19 @@ if __name__ == "__main__":
     intents.presences = True
 
     # Create and run the Discord client.
-    bot = PuckBotClient(intents=intents, command_prefix=config["command_prefix"])
+    bot = PuckBotClient(
+        command_prefix=config["command_prefix"],
+        description="A music bot for you dumb chuds.",
+        intents=intents,
+    )
     bot.config = config
+    bot.logger = logger
 
     async def main():
         async with bot:
             # bot.loop.create_task(background_task())
-            await load_extensions(bot)
-            await bot.start(config["token"])
+            await load_extensions(bot, f"{dirname(__file__)}/music_bot/cogs")
+            # await bot.start(config["token"])
 
     asyncio.run(main())
 # TODO: readme  https://gist.github.com/cyphunk/dfceef02f5ad7b20df6b389aa777ec87
