@@ -6,8 +6,9 @@ from os.path import dirname
 
 # Third party imports.
 import discord
-import googleapiclient.discovery
-import youtube_dl
+
+# import googleapiclient.discovery
+# import youtube_dl
 from discord.ext import commands
 
 
@@ -36,7 +37,9 @@ class PuckBotClient(commands.Bot):
     def logger(self, logger: logging.Logger):
         self.__logger = logger
 
-    ########################################################################################
+    ####################################################################################
+    #                                   Methods                                        #
+    ####################################################################################
     def get_playlists(self) -> dict:
         with open(
             file=f"{dirname(__file__)}/playlists.json",

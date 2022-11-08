@@ -1,7 +1,6 @@
 # Standard library imports.
 import os
 import sys
-from os.path import dirname
 
 # Third party imports.
 from dotenv import load_dotenv
