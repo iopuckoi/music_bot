@@ -31,6 +31,7 @@ class PuckCog(commands.Cog):
 
     @commands.command(name="fart", help="This command farts")
     async def fart(self, ctx: commands.Context):
+        print("FAAAARTING")
         await ctx.send(f"Available playlists - {keys(self.bot.config['playlists'])}")
 
     @commands.command(name="pause", help="This command pauses the song")
