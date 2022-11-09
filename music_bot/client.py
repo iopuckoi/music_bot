@@ -83,6 +83,7 @@ class PuckBotClient(commands.Bot):
     #     await member.create_dm()
     #     await member.dm_channel.send(f"Hi {member.name}, you greasy Boglim!")
 
+    ####################################################################################
     async def on_message(self, message: discord.Message) -> None:
         """Override discord.Client on_message method.  Called when a Message is received.
 
@@ -95,4 +96,6 @@ class PuckBotClient(commands.Bot):
         if message.content == "test":
             await message.channel.send(f"Shut up {message.author}, you greasy Boglim!")
 
+        # This only needs to be here because we are overriding the default on_message.
+        # Otherwise, the new method will block all other commands.
         await self.process_commands(message)
