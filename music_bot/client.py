@@ -73,6 +73,12 @@ class PuckBotClient(commands.Bot):
         members = "\n - ".join([member.name for member in guild.members])
         print(f"Guild Members:\n - {members}")
 
+        await self.change_presence(
+            activity=discord.Activity(
+                type=discord.ActivityType.listening, name="to you fat chuds talk!"
+            )
+        )
+
     # async def on_member_join(member):
     #     await member.create_dm()
     #     await member.dm_channel.send(f"Hi {member.name}, you greasy Boglim!")

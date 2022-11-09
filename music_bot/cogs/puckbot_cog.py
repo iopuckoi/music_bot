@@ -18,6 +18,10 @@ class PuckCog(commands.Cog):
         self.bot.logger.debug("Finished initializing PuckCog:")
         self.bot.logger.debug(self.fart.__dict__)
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print("Bot is now online!")
+
     # @commands.command(name="play_song", help="To play song")
     # async def play(self, ctx: commands.Context, url):
     #     try:
@@ -36,7 +40,8 @@ class PuckCog(commands.Cog):
     @commands.command(name="fart", help="This command farts")
     async def fart(self, ctx: commands.Context):
         self.bot.logger.info("Sending fart command!")
-        await ctx.channel.send(f"Available playlists - {self.bot.config['playlists'].keys()}")
+        await ctx.send("If this doesn't work I'll lose my fucking mind.")
+        # await ctx.send(f"Available playlists - {self.bot.config['playlists'].keys()}")
 
     # @commands.command(name="pause", help="This command pauses the song")
     # async def pause(self, ctx: commands.Context):
