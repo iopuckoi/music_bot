@@ -1,6 +1,7 @@
 # Standard library imports.
 import asyncio
 import logging
+import sys
 from os.path import dirname
 
 # Third party imports.
@@ -8,6 +9,7 @@ import discord
 from music_bot.client import PuckBotClient
 from music_bot.common.utils import (
     get_config,
+    init_argparse,
     load_extensions,
 )
 from music_bot.formatter import Formatter
@@ -41,8 +43,21 @@ from music_bot.formatter import Formatter
 #                                 Script entrypoint.                                   #
 ########################################################################################
 if __name__ == "__main__":
+    # Gather command line args.
+    argparser = init_argparse()
+
+    # Print the usage statement if no arguments are given.
+    if len(sys.argv) <= 1:
+        argparser.print_help()
+        sys.exit()
+
+    args = argparser.parse_args()
+
+    if not args.config:
+        sys.exit("Must provide configuration file.")
+
     # Get all config and environment variables.
-    config = get_config(f"{dirname(__file__)}/.env")
+    config = get_config(args.env, args.config)
 
     # Configure logger for the script.
     logging.getLogger("asyncio").setLevel(logging.ERROR)

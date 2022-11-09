@@ -88,3 +88,5 @@ class PuckBotClient(commands.Bot):
 
         if message.content == "test":
             await message.channel.send(f"Shut up {message.author}, you greasy Boglim!")
+
+        await self.process_commands(message)
