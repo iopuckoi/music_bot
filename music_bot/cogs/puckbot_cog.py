@@ -36,14 +36,14 @@ class PuckCog(commands.Cog):
     @commands.command(name="fart", help="This command farts")
     async def fart(self, ctx: commands.Context):
         self.bot.logger.info("Sending fart command!")
-        await ctx.send(f"Available playlists - {self.bot.config['playlists'].keys()}")
+        await ctx.channel.send(f"Available playlists - {self.bot.config['playlists'].keys()}")
 
     # @commands.command(name="pause", help="This command pauses the song")
     # async def pause(self, ctx: commands.Context):
     #     voice_client = ctx.message.guild.voice_client
     #     if voice_client.is_playing():
     #         await voice_client.pause()
-    #     else:
+    #     else:Greetings
     #         await ctx.send("The bot is not playing anything at the moment.")
 
     # @commands.command(name="resume", help="Resumes the song")

@@ -28,7 +28,7 @@ def get_config(env_file: str) -> dict:
         sys.exit("GOOGLE_API_TOKEN missing from .env file.")
 
     return {
-        "command_prefix": "/",
+        "command_prefix": "$",
         "log_level": "DEBUG",
         # Environment variables.
         "developer_key": developer_key,
@@ -51,4 +51,5 @@ async def load_extensions(bot: PuckBotClient, cog_path: str) -> None:
             # cut off the .py from the file name
             bot.logger.info(f"  ...loading cog : {filename}")
             cog_package = cog_path[2:].replace("/", ".")
+            print(cog_package)
             await bot.load_extension(f"{cog_package}.{filename[:-3]}")

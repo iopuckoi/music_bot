@@ -73,8 +73,14 @@ if __name__ == "__main__":
     async def main():
         async with bot:
             # bot.loop.create_task(background_task())
-            await load_extensions(bot, f"{dirname(__file__)}/music_bot/cogs")
-            # await bot.start(config["token"])
+            await load_extensions(bot, "./music_bot/cogs")
+
+            for cogName in bot.cogs:
+                logger.info(f"Cog - {cogName}")
+                cog = bot.get_cog(cogName)
+                commands = cog.get_commands()
+                print([c.name for c in commands])
+            await bot.start(config["token"])
 
     asyncio.run(main())
 # TODO: readme  https://gist.github.com/cyphunk/dfceef02f5ad7b20df6b389aa777ec87
