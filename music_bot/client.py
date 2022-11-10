@@ -37,11 +37,11 @@ class PuckBotClient(commands.Bot):
         self.__logger = logger
 
     @property
-    def youtube(self) -> logging.Logger:
+    def youtube(self):
         return self.__youtube
 
     @youtube.setter
-    def youtube(self, youtube: logging.Logger):
+    def youtube(self, youtube):
         self.__youtube = youtube
 
     ####################################################################################

@@ -30,8 +30,36 @@ class PuckCog(commands.Cog):
     #     except:
     #         await ctx.send("The bot is not connected to a voice channel.")
 
+    @commands.command(name="list", help="List all songs in a given playlist.")
+    async def list(self, ctx: commands.Context, plist: str) -> None:
+        """List all songs in a given playlist.
+
+        Args:
+            ctx (commands.Context): The command context.
+            plist (str): Playlist for which to list all songs.
+        """
+        playlist = plist.lower()
+        if playlist not in self.bot.config["playlists"]:
+            await ctx.send(f"ERROR: invalid playlist provided: {playlist}\n")
+
+        query = self.bot.youtube.playlistItems().list(
+            part="snippet,contentDetails,id,status",
+            playlistId=self.bot.config["playlists"][playlist],
+        )
+        results = query.execute()
+        songs = list()
+        for song in results["items"]:
+            songs.append(song["snippet"]["title"])
+
+        await ctx.send("\n".join(songs))
+
     @commands.command(name="playlists", help="List all available playlists.")
-    async def playlists(self, ctx: commands.Context):
+    async def playlists(self, ctx: commands.Context) -> None:
+        """Lists all available playlists.
+
+        Args:
+            ctx (commands.Context): The command context.
+        """
         out = "\n\t".join(self.bot.config["playlists"].keys())
         await ctx.send(f"Available playlists:{out}\n")
 

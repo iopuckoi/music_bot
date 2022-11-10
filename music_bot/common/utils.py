@@ -122,13 +122,13 @@ def get_config(args: argparse.Namespace) -> dict:
     developer_key = str(os.getenv("GOOGLE_API_TOKEN"))
 
     # Validate all necessary variables are present.
-    if not token:
+    if token is None:
         sys.exit("ERROR: DISCORD_TOKEN missing from .env file.")
 
-    if not guild:
+    if guild is None:
         sys.exit("ERROR: DISCORD_GUILD missing from .env file.")
 
-    if not developer_key:
+    if developer_key is None:
         sys.exit("ERROR: GOOGLE_API_TOKEN missing from .env file.")
 
     return {

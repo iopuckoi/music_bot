@@ -104,6 +104,7 @@ if __name__ == "__main__":
                     print([c.name for c in commands])
                 else:
                     sys.exit(f"ERROR: Unable to get cog {cog_name} from bot.")
+
             await bot.start(config["token"])
 
     # Run the bot.
