@@ -110,22 +110,3 @@ if __name__ == "__main__":
 
     # Run the bot.
     asyncio.run(main())
-
-# await setup(bot)
-# bot.run(config["token"])
-
-
-# 'request' variable is the only thing you must change
-# depending on the resource and method you need to use
-# in your query
-# playlist_response = youtube.playlistItems().list(
-#     part="snippet,contentDetails,id,status", playlistId=str(os.getenv("GAME_NIGHT"))
-# )
-
-# Query execution
-# response = playlist_response.execute()
-# Print the results
-# Standard library imports.
-# import pprint
-
-# pprint.pprint(response)

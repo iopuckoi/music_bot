@@ -13,7 +13,7 @@ from discord.ext import commands
 
 
 class PuckBotClient(commands.Bot):
-    """Subclass commands.Bot clas."""
+    """Subclass commands.Bot class."""
 
     def __init__(self, *args, **kwargs):
         super(PuckBotClient, self).__init__(*args, **kwargs)
@@ -23,22 +23,39 @@ class PuckBotClient(commands.Bot):
     ####################################################################################
     @property
     def config(self) -> dict:
+        """Getter and setter for config.
+
+        Returns:
+            dict: Bot configuration dict.
+        """
         return self.__config
 
     @config.setter
     def config(self, config: dict):
         self.__config = config
 
+    ####################################################################################
     @property
     def logger(self) -> logging.Logger:
+        """Getter and setter for logger.
+
+        Returns:
+            logging.Logger: Bot logger object.
+        """
         return self.__logger
 
     @logger.setter
     def logger(self, logger: logging.Logger):
         self.__logger = logger
 
+    ####################################################################################
     @property
     def youtube(self) -> googleapiclient.discovery.Resource:
+        """Getter and setter for the YouTube API object.
+
+        Returns:
+            googleapiclient.discovery.Resource: YouTube API object.
+        """
         return self.__youtube
 
     @youtube.setter
@@ -49,6 +66,11 @@ class PuckBotClient(commands.Bot):
     #                                   Methods                                        #
     ####################################################################################
     def get_playlists(self) -> dict:
+        """Read playlists from json file.
+
+        Returns:
+            dict: Dict conaining all playlist names and YouTube link.
+        """
         with open(
             file=f"{dirname(__file__)}/playlists.json",
             mode="r",

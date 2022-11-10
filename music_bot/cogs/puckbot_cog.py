@@ -5,6 +5,8 @@ from music_bot.client import PuckBotClient
 
 ########################################################################################
 class PuckCog(commands.Cog):
+    """Cog containing commands for the Puck Discord bot."""
+
     def __init__(self, bot: PuckBotClient):
         self.bot = bot
         self.voice_states = {}
@@ -13,6 +15,7 @@ class PuckCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        """Method called once the bot is ready."""
         print("Bot is now online!\n")
 
     # @commands.command(name="play_song", help="To play song")
@@ -46,7 +49,7 @@ class PuckCog(commands.Cog):
         # Set maxResults to 50.  If playlists are larger than this number, need to
         # check if nextPageToken is set.  If its not empty, need to continue making
         # queries til it is.  Provide in the query as nextPageToke = value.
-        query = self.bot.youtube.playlistItems().list(
+        query = self.bot.youtube.playlistItems().list(  # type: ignore
             maxResults=50,
             part="snippet,contentDetails,id,status",
             playlistId=self.bot.config["playlists"][playlist],
@@ -100,6 +103,11 @@ class PuckCog(commands.Cog):
 
 
 ########################################################################################
-async def setup(bot: PuckBotClient):
+async def setup(bot: PuckBotClient) -> None:
+    """Add the cog to the bot.
+
+    Args:
+        bot (PuckBotClient): The Discord bot.
+    """
     bot.logger.info("Finishing PuckCog setup...")
     await bot.add_cog(PuckCog(bot))
