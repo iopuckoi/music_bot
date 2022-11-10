@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+disable=
+    assigning-non-slot,
+    broad-except,
+    protected-access
