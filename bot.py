@@ -90,6 +90,7 @@ if __name__ == "__main__":
         developerKey=config["developer_key"],
     )
 
+    # https://googleapis.github.io/google-api-python-client/docs/epy/index.html
     async def main():
         """Main bot entrypoint."""
         async with bot:
