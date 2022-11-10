@@ -91,6 +91,10 @@ if __name__ == "__main__":
     )
 
     # https://googleapis.github.io/google-api-python-client/docs/epy/index.html
+
+    # TODO
+    # https://gist.github.com/vbe0201/ade9b80f2d3b64643d854938d40a0a2d
+    # https://medium.com/pythonland/build-a-discord-bot-in-python-that-plays-music-and-send-gifs-856385e605a1
     async def main():
         """Main bot entrypoint."""
         async with bot:

@@ -62,6 +62,9 @@ class PuckCog(commands.Cog):
         for song in results["items"]:
             songs.append(song["snippet"]["title"])
 
+            # ID of the video:
+            # song["snippet"]["resourceId"]["videoId"]
+
         await ctx.send("\n".join(songs))
 
     ####################################################################################
