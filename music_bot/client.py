@@ -7,7 +7,6 @@ from os.path import dirname
 # Third party imports.
 import discord
 
-# import googleapiclient.discovery
 # import youtube_dl
 from discord.ext import commands
 
@@ -36,6 +35,14 @@ class PuckBotClient(commands.Bot):
     @logger.setter
     def logger(self, logger: logging.Logger):
         self.__logger = logger
+
+    @property
+    def youtube(self) -> logging.Logger:
+        return self.__youtube
+
+    @youtube.setter
+    def youtube(self, youtube: logging.Logger):
+        self.__youtube = youtube
 
     ####################################################################################
     #                                   Methods                                        #

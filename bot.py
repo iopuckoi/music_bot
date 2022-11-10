@@ -2,10 +2,10 @@
 import asyncio
 import logging
 import sys
-from os.path import dirname
 
 # Third party imports.
 import discord
+import googleapiclient.discovery
 from music_bot.client import PuckBotClient
 from music_bot.common.utils import (
     get_config,
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         sys.exit("Must provide configuration file.")
 
     # Get all config and environment variables.
-    config = get_config(args.env, args.config)
+    config = get_config(args)
 
     # Configure logger for the script.
     logging.getLogger("asyncio").setLevel(logging.ERROR)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     intents.message_content = True
     intents.presences = True
 
-    # Create and run the Discord client.
+    # Create the bot client and initialize members.
     bot = PuckBotClient(
         command_prefix=config["command_prefix"],
         description="A music bot for you dumb chuds.",
@@ -84,29 +84,34 @@ if __name__ == "__main__":
     )
     bot.config = config
     bot.logger = logger
+    bot.youtube = googleapiclient.discovery.build(
+        bot.config["api_service_name"],
+        bot.config["api_version"],
+        developerKey=config["developer_key"],
+    )
 
     async def main():
+        """Main bot entrypoint."""
         async with bot:
             # bot.loop.create_task(background_task())
             await load_extensions(bot, "./music_bot/cogs")
 
-            for cogName in bot.cogs:
-                logger.info(f"Cog - {cogName}")
-                cog = bot.get_cog(cogName)
-                commands = cog.get_commands()
-                print([c.name for c in commands])
+            for cog_name in bot.cogs:
+                logger.info(f"Cog - {cog_name}")
+                cog = bot.get_cog(cog_name)
+                if cog:
+                    commands = cog.get_commands()
+                    print([c.name for c in commands])
+                else:
+                    sys.exit(f"ERROR: Unable to get cog {cog_name} from bot.")
             await bot.start(config["token"])
 
+    # Run the bot.
     asyncio.run(main())
-# TODO: readme  https://gist.github.com/cyphunk/dfceef02f5ad7b20df6b389aa777ec87
+
 # await setup(bot)
 # bot.run(config["token"])
 
-# youtube = googleapiclient.discovery.build(
-#     config["api_service_name"],
-#     config["api_version"],
-#     developerKey=config["developer_key"],
-# )
 
 # 'request' variable is the only thing you must change
 # depending on the resource and method you need to use

@@ -1,6 +1,6 @@
 {
   "api_service_name": "youtube",
   "api_version": "v3",
-  "command_prefix": "/",
+  "command_prefix": "$",
   "log_level": "DEBUG"
 }

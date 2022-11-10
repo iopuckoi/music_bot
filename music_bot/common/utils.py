@@ -80,18 +80,17 @@ def add_logging_level(
 
 
 ########################################################################################
-def get_config(env_file: str, config_file: str) -> dict:
+def get_config(args: argparse.Namespace) -> dict:
     """Generate the configuration for the bot.
 
     Args:
-        env_file (str): Dotenv file containing environment variables.
-        config_file (str): Json file containing configuration items.
+        args (argparse.Namespace): Script arguments object.
 
     Returns:
         dict: Bot config dict.
     """
     with open(
-        file=config_file,
+        file=args.config,
         mode="r",
         encoding="utf-8",
     ) as cfg:
@@ -101,12 +100,23 @@ def get_config(env_file: str, config_file: str) -> dict:
         except Exception as err:
             sys.exit(f"ERROR: Problem loading config file as json : {err}")
 
+    with open(
+        file=args.playlists,
+        mode="r",
+        encoding="utf-8",
+    ) as plst:
+        try:
+            config["playlists"] = json.loads(plst.read())
+
+        except Exception as err:
+            sys.exit(f"ERROR: Problem loading playlists file as json : {err}")
+
     for item in ("api_service_name", "api_version", "command_prefix", "log_level"):
         if item not in config:
             sys.exit(f'ERROR: Configuration key "{item}" missing from config file!!')
 
     # Load all environment variables from local .env file.
-    load_dotenv(env_file)
+    load_dotenv(args.env)
     token = str(os.getenv("DISCORD_TOKEN"))
     guild = str(os.getenv("DISCORD_GUILD"))
     developer_key = str(os.getenv("GOOGLE_API_TOKEN"))
@@ -141,18 +151,26 @@ def init_argparse() -> argparse.ArgumentParser:
         description="Puck's magical Discord music bot.",
     )
 
+    # Default all file args to ones in root directory of project.
     parser.add_argument(
         "-c",
         "--config",
+        default=f"{dirname(__file__)}/../../config.json",
         help="Script configuration JSON file.",
     )
 
-    # Default to env file in root directory of project.
     parser.add_argument(
         "-e",
         "--env",
         default=f"{dirname(__file__)}/../../.env",
         help="Script dotenv file.",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--playlists",
+        default=f"{dirname(__file__)}/../../playlists.json",
+        help="Playlists file.",
     )
 
     parser.add_argument(

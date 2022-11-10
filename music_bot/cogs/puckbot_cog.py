@@ -1,5 +1,4 @@
 # Third party imports.
-import googleapiclient.discovery
 from discord.ext import commands
 from music_bot.client import PuckBotClient
 
@@ -9,18 +8,12 @@ class PuckCog(commands.Cog):
     def __init__(self, bot: PuckBotClient):
         self.bot = bot
         self.voice_states = {}
-        self.youtube = googleapiclient.discovery.build(
-            self.bot.config["api_service_name"],
-            self.bot.config["api_version"],
-            developerKey=self.bot.config["developer_key"],
-        )
 
-        self.bot.logger.debug("Finished initializing PuckCog:")
-        self.bot.logger.debug(self.fart.__dict__)
+        self.bot.logger.debug("Finished initializing PuckCog.\n")
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Bot is now online!")
+        print("Bot is now online!\n")
 
     # @commands.command(name="play_song", help="To play song")
     # async def play(self, ctx: commands.Context, url):
@@ -37,11 +30,10 @@ class PuckCog(commands.Cog):
     #     except:
     #         await ctx.send("The bot is not connected to a voice channel.")
 
-    @commands.command(name="fart", help="This command farts")
-    async def fart(self, ctx: commands.Context):
-        self.bot.logger.info("Sending fart command!")
-        await ctx.send("If this doesn't work I'll lose my fucking mind.")
-        # await ctx.send(f"Available playlists - {self.bot.config['playlists'].keys()}")
+    @commands.command(name="playlists", help="List all available playlists.")
+    async def playlists(self, ctx: commands.Context):
+        out = "\n\t".join(self.bot.config["playlists"].keys())
+        await ctx.send(f"Available playlists:{out}\n")
 
     # @commands.command(name="pause", help="This command pauses the song")
     # async def pause(self, ctx: commands.Context):
