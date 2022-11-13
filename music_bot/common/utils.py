@@ -117,22 +117,27 @@ def get_config(args: argparse.Namespace) -> dict:
 
     # Load all environment variables from local .env file.
     load_dotenv(args.env)
-    token = str(os.getenv("DISCORD_TOKEN"))
-    guild = str(os.getenv("DISCORD_GUILD"))
+    channel_id = str(os.getenv("CHANNEL_ID"))
     developer_key = str(os.getenv("GOOGLE_API_TOKEN"))
+    guild = str(os.getenv("DISCORD_GUILD"))
+    token = str(os.getenv("DISCORD_TOKEN"))
 
     # Validate all necessary variables are present.
-    if token is None:
-        sys.exit("ERROR: DISCORD_TOKEN missing from .env file.")
-
-    if guild is None:
-        sys.exit("ERROR: DISCORD_GUILD missing from .env file.")
+    if channel_id is None:
+        sys.exit("ERROR: CHANNEL_ID missing from .env file.")
 
     if developer_key is None:
         sys.exit("ERROR: GOOGLE_API_TOKEN missing from .env file.")
 
+    if guild is None:
+        sys.exit("ERROR: DISCORD_GUILD missing from .env file.")
+
+    if token is None:
+        sys.exit("ERROR: DISCORD_TOKEN missing from .env file.")
+
     return {
         **config,
+        "channel_id": channel_id,
         "developer_key": developer_key,
         "guild": guild,
         "token": token,

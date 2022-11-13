@@ -110,6 +110,29 @@ if __name__ == "__main__":
                 else:
                     sys.exit(f"ERROR: Unable to get cog {cog_name} from bot.")
 
+            query = bot.youtube.playlists().list(  # type: ignore
+                maxResults=50,
+                # channelId=bot.config["channel_id"],
+                mine=True,
+                part="snippet,contentDetails,id,status",
+                # playlistId=self.bot.config["playlists"][playlist],
+            )
+            results = query.execute()
+
+            # Further details on response structure are found in the API documentation:
+            # https://developers.google.com/youtube/v3/docs/playlistItems/list
+            # songs = list()
+            # for song in results["items"]:
+            #     songs.append(song["snippet"]["title"])
+
+            # ID of the video:
+            # song["snippet"]["resourceId"]["videoId"]
+            # Standard library imports.
+            import pprint
+
+            pprint.pprint(results)
+            sys.exit()
+
             await bot.start(config["token"])
 
     # Run the bot.
