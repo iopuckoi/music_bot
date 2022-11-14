@@ -100,17 +100,7 @@ def get_config(args: argparse.Namespace) -> dict:
         except Exception as err:
             sys.exit(f"ERROR: Problem loading config file as json : {err}")
 
-    with open(
-        file=args.playlists,
-        mode="r",
-        encoding="utf-8",
-    ) as plst:
-        try:
-            config["playlists"] = json.loads(plst.read())
-
-        except Exception as err:
-            sys.exit(f"ERROR: Problem loading playlists file as json : {err}")
-
+    # Validate all required items are present in the config file.
     for item in ("api_service_name", "api_version", "command_prefix", "log_level"):
         if item not in config:
             sys.exit(f'ERROR: Configuration key "{item}" missing from config file!!')
@@ -122,7 +112,7 @@ def get_config(args: argparse.Namespace) -> dict:
     guild = str(os.getenv("DISCORD_GUILD"))
     token = str(os.getenv("DISCORD_TOKEN"))
 
-    # Validate all necessary variables are present.
+    # Validate all necessary variables are present in the .env file.
     if channel_id is None:
         sys.exit("ERROR: CHANNEL_ID missing from .env file.")
 
@@ -169,13 +159,6 @@ def init_argparse() -> argparse.ArgumentParser:
         "--env",
         default=f"{dirname(__file__)}/../../.env",
         help="Script dotenv file.",
-    )
-
-    parser.add_argument(
-        "-p",
-        "--playlists",
-        default=f"{dirname(__file__)}/../../playlists.json",
-        help="Playlists file.",
     )
 
     parser.add_argument(

@@ -34,27 +34,34 @@ class PuckCog(commands.Cog):
     #         await ctx.send("The bot is not connected to a voice channel.")
 
     ####################################################################################
+    @commands.command(name="clear", help="Clear all songs in the queue.")
+    async def clear(self, ctx: commands.Context) -> None:
+        self.bot.queue.clear()
+        #TODO: add some check to make sure queue properly cleared.
+        await ctx.send("Queue cleared.")
+    #TODO:
+    #add to queue
+    #inject into cue
+    #skip
+    #back
+    #pause
+    #resume
+    #stop
+
+    ####################################################################################
     @commands.command(name="list", help="List all songs in a given playlist.")
-    async def list(self, ctx: commands.Context, plist: str) -> None:
+    async def list(self, ctx: commands.Context, playlist: str) -> None:
         """List all songs in a given playlist.
 
         Args:
             ctx (commands.Context): The command context.
             plist (str): Playlist for which to list all songs.
         """
-        playlist = plist.lower()
-        if playlist not in self.bot.config["playlists"]:
+        playlists = self.bot.get_playlists()
+        if playlist not in playlists:
             await ctx.send(f"ERROR: invalid playlist provided: {playlist}\n")
 
-        # Set maxResults to 50.  If playlists are larger than this number, need to
-        # check if nextPageToken is set.  If its not empty, need to continue making
-        # queries til it is.  Provide in the query as nextPageToke = value.
-        query = self.bot.youtube.playlistItems().list(  # type: ignore
-            maxResults=50,
-            part="snippet,contentDetails,id,status",
-            playlistId=self.bot.config["playlists"][playlist],
-        )
-        results = query.execute()
+        results = self.bot.get_playlist_songs(playlist)
 
         # Further details on response structure are found in the API documentation:
         # https://developers.google.com/youtube/v3/docs/playlistItems/list
@@ -62,10 +69,7 @@ class PuckCog(commands.Cog):
         for song in results["items"]:
             songs.append(song["snippet"]["title"])
 
-            # ID of the video:
-            # song["snippet"]["resourceId"]["videoId"]
-
-        await ctx.send("\n".join(songs))
+        await ctx.send("\n - ".join(songs))
 
     ####################################################################################
     @commands.command(name="playlists", help="List all available playlists.")
@@ -75,8 +79,9 @@ class PuckCog(commands.Cog):
         Args:
             ctx (commands.Context): The command context.
         """
-        out = "\n\t".join(self.bot.config["playlists"].keys())
-        await ctx.send(f"Available playlists:{out}\n")
+        out = "\n\t".join(sorted(self.bot.get_playlists().keys()))
+
+        await ctx.send(f"Available playlists:\n\t{out}\n")
 
     # @commands.command(name="pause", help="This command pauses the song")
     # async def pause(self, ctx: commands.Context):

@@ -12,7 +12,7 @@ from music_bot.common.utils import (
     init_argparse,
     load_extensions,
 )
-from music_bot.formatter import Formatter
+from music_bot.classes import Formatter, SongQueue
 
 # https://medium.com/pythonland/build-a-discord-bot-in-python-that-plays-music-and-send-gifs-856385e605a1
 
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     )
     bot.config = config
     bot.logger = logger
+    bot.queue = SongQueue()
     bot.youtube = googleapiclient.discovery.build(
         bot.config["api_service_name"],
         bot.config["api_version"],
@@ -110,14 +111,6 @@ if __name__ == "__main__":
                 else:
                     sys.exit(f"ERROR: Unable to get cog {cog_name} from bot.")
 
-            query = bot.youtube.playlists().list(  # type: ignore
-                maxResults=50,
-                # channelId=bot.config["channel_id"],
-                mine=True,
-                part="snippet,contentDetails,id,status",
-                # playlistId=self.bot.config["playlists"][playlist],
-            )
-            results = query.execute()
 
             # Further details on response structure are found in the API documentation:
             # https://developers.google.com/youtube/v3/docs/playlistItems/list
@@ -127,12 +120,14 @@ if __name__ == "__main__":
 
             # ID of the video:
             # song["snippet"]["resourceId"]["videoId"]
-            # Standard library imports.
             import pprint
+            await bot.load_playlist("gamenight")
+            print(bot.queue)
+            bot.queue.clear()
 
-            pprint.pprint(results)
+            print(bot.queue)
+            #TODO: wrap client commands in try/excepts 
             sys.exit()
-
             await bot.start(config["token"])
 
     # Run the bot.

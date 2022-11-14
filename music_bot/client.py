@@ -1,5 +1,4 @@
 # Standard library imports.
-import json
 import logging
 import sys
 from os.path import dirname
@@ -7,8 +6,8 @@ from os.path import dirname
 # Third party imports.
 import discord
 import googleapiclient.discovery
+from music_bot.classes import CaseInsensitiveDict, Song, SongQueue
 
-# import youtube_dl
 from discord.ext import commands
 
 
@@ -50,6 +49,20 @@ class PuckBotClient(commands.Bot):
 
     ####################################################################################
     @property
+    def queue(self) -> SongQueue:
+        """Getter and setter for queue.
+
+        Returns:
+            SongQueue: Song queue.
+        """
+        return self.__queue
+
+    @queue.setter
+    def queue(self, queue: SongQueue):
+        self.__queue = queue
+
+    ####################################################################################
+    @property
     def youtube(self) -> googleapiclient.discovery.Resource:
         """Getter and setter for the YouTube API object.
 
@@ -65,25 +78,41 @@ class PuckBotClient(commands.Bot):
     ####################################################################################
     #                                   Methods                                        #
     ####################################################################################
-    def get_playlists(self) -> dict:
-        """Read playlists from json file.
+    def get_playlists(self) -> CaseInsensitiveDict:
+        """Query YouTUbe for all public playlists for the proided channel ID.
 
         Returns:
-            dict: Dict conaining all playlist names and YouTube link.
+            CaseInsensitiveDict: Dict conaining all playlist names and YouTube link.
         """
-        with open(
-            file=f"{dirname(__file__)}/playlists.json",
-            mode="r",
-            encoding="utf-8",
-        ) as playlists:
-            try:
-                return json.loads(playlists.read())
+        results = self.youtube.playlists().list(  # type: ignore
+            maxResults=50,
+            channelId=self.config["channel_id"],
+            part="snippet,contentDetails,id,status",
+        ).execute()
 
-            except Exception as err:
-                self.logger.error("   Error loading playlist file as json:")
-                self.logger.error(f"    {err}")
+        return CaseInsensitiveDict(**{ playlist["snippet"]["title"] : playlist["id"] for playlist in results["items"] })
 
-                sys.exit("Aborting bot!!!")
+    ####################################################################################
+    def get_playlist_songs(self, playlist: str) -> dict:
+        playlists = self.get_playlists()
+        if playlist not in playlists:
+            raise Exception(f"ERROR: invalid playlist provided: {playlist}\n")
+
+        # Set maxResults to 50.  If playlists are larger than this number, need to
+        # check if nextPageToken is set.  If its not empty, need to continue making
+        # queries til it is.  Provide in the query as nextPageToke = value.
+        return self.youtube.playlistItems().list(  # type: ignore
+            maxResults=50,
+            part="snippet,contentDetails,id,status",
+            playlistId=playlists[playlist],
+        ).execute()
+
+    ####################################################################################
+    async def load_playlist(self, playlist: str) -> None:
+        songs = self.get_playlist_songs(playlist)
+
+        for song in songs["items"]:
+            await self.queue.put(Song(song))
 
     ####################################################################################
     async def on_ready(self) -> None:
