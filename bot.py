@@ -6,38 +6,10 @@ import sys
 # Third party imports.
 import discord
 import googleapiclient.discovery
+
 from music_bot.client import PuckBotClient
-from music_bot.common.utils import (
-    get_config,
-    init_argparse,
-    load_extensions,
-)
-from music_bot.classes import Formatter, SongQueue
-
-# https://medium.com/pythonland/build-a-discord-bot-in-python-that-plays-music-and-send-gifs-856385e605a1
-
-
-# import requests
-# def handler(pd: "pipedream"):
-#     token = f'{pd.inputs["youtube_data_api"]["$auth"]["oauth_access_token"]}'
-#     authorization = f"Bearer {token}"
-#     headers = {"Authorization": authorization}
-#     r = requests.get("https://www.googleapis.com/oauth2/v1/userinfo", headers=headers)
-#     # Export the data for use in future steps
-#     return r.json()
-
-
-# import requests
-
-
-# def handler(pd: "pipedream"):
-#     headers = {"Authorization": f'Bot {pd.inputs["discord_bot"]["$auth"]["bot_token"]}'}
-#     r = requests.get("https://discord.com/api/users/@me", headers=headers)
-#     # Export the data for use in future steps
-#     return r.json()
-
-########################################################################################
-
+from music_bot.common.classes import Formatter, SongQueue
+from music_bot.common.utils import get_config, init_argparse, load_extensions
 
 ########################################################################################
 #                                 Script entrypoint.                                   #
@@ -84,7 +56,6 @@ if __name__ == "__main__":
     )
     bot.config = config
     bot.logger = logger
-    bot.queue = SongQueue()
     bot.youtube = googleapiclient.discovery.build(
         bot.config["api_service_name"],
         bot.config["api_version"],
@@ -111,23 +82,24 @@ if __name__ == "__main__":
                 else:
                     sys.exit(f"ERROR: Unable to get cog {cog_name} from bot.")
 
+            # Standard library imports.
+            # import pprint
 
-            # Further details on response structure are found in the API documentation:
-            # https://developers.google.com/youtube/v3/docs/playlistItems/list
-            # songs = list()
-            # for song in results["items"]:
-            #     songs.append(song["snippet"]["title"])
+            # songs = bot.get_playlist_songs("gamenight")
+            # for song in songs:
+            #     print(song["snippet"]["title"])
 
-            # ID of the video:
-            # song["snippet"]["resourceId"]["videoId"]
-            import pprint
-            await bot.load_playlist("gamenight")
-            print(bot.queue)
-            bot.queue.clear()
+            # await bot.load_playlist("gamenight")
+            # while not bot.audio_state.queue.empty():
+            #     song = await bot.audio_state.queue.get()
+            #     print(f"getting song {song.title}")
+            #     bot.audio_state.queue.task_done()
+            # # print(bot.queue)
+            # # bot.queue.clear()
 
-            print(bot.queue)
-            #TODO: wrap client commands in try/excepts 
-            sys.exit()
+            # print(bot.audio_state.queue)
+
+            # sys.exit()
             await bot.start(config["token"])
 
     # Run the bot.

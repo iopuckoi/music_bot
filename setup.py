@@ -37,7 +37,6 @@ def find_version(version_file: str) -> str:
 
 requirements = [
     "discord.py==2.0.1",
-    "ffmpeg==1.4",
     "google-api-python-client==2.63.0",
     "google-auth-oauthlib==0.5.3",
     "google-auth-httplib2==0.1.0",

@@ -1,14 +1,13 @@
 # Standard library imports.
 import logging
 import sys
-from os.path import dirname
 
 # Third party imports.
 import discord
 import googleapiclient.discovery
-from music_bot.classes import CaseInsensitiveDict, Song, SongQueue
-
 from discord.ext import commands
+
+from music_bot.common.classes import CaseInsensitiveDict
 
 
 class PuckBotClient(commands.Bot):
@@ -22,7 +21,7 @@ class PuckBotClient(commands.Bot):
     ####################################################################################
     @property
     def config(self) -> dict:
-        """Getter and setter for config.
+        """Bot configuration dictionary.
 
         Returns:
             dict: Bot configuration dict.
@@ -36,7 +35,7 @@ class PuckBotClient(commands.Bot):
     ####################################################################################
     @property
     def logger(self) -> logging.Logger:
-        """Getter and setter for logger.
+        """Bot logger object.
 
         Returns:
             logging.Logger: Bot logger object.
@@ -49,22 +48,8 @@ class PuckBotClient(commands.Bot):
 
     ####################################################################################
     @property
-    def queue(self) -> SongQueue:
-        """Getter and setter for queue.
-
-        Returns:
-            SongQueue: Song queue.
-        """
-        return self.__queue
-
-    @queue.setter
-    def queue(self, queue: SongQueue):
-        self.__queue = queue
-
-    ####################################################################################
-    @property
     def youtube(self) -> googleapiclient.discovery.Resource:
-        """Getter and setter for the YouTube API object.
+        """YouTube API Resource object
 
         Returns:
             googleapiclient.discovery.Resource: YouTube API object.
@@ -79,40 +64,78 @@ class PuckBotClient(commands.Bot):
     #                                   Methods                                        #
     ####################################################################################
     def get_playlists(self) -> CaseInsensitiveDict:
-        """Query YouTUbe for all public playlists for the proided channel ID.
+        """Query YouTube for all public playlists for the proided channel ID. Further
+        details on response structure are found in the API documentation:
+        https://developers.google.com/youtube/v3/docs/playlists/list
 
         Returns:
             CaseInsensitiveDict: Dict conaining all playlist names and YouTube link.
         """
-        results = self.youtube.playlists().list(  # type: ignore
-            maxResults=50,
-            channelId=self.config["channel_id"],
-            part="snippet,contentDetails,id,status",
-        ).execute()
+        done = False
+        next_token = ""
+        playlists = []
+        while not done:
+            results = (
+                self.youtube.playlists()  # type: ignore
+                .list(
+                    channelId=self.config["channel_id"],
+                    maxResults=10,
+                    pageToken=next_token,
+                    part="snippet,contentDetails,id,status",
+                )
+                .execute()
+            )
+            playlists = playlists + results["items"]
+            if "nextPageToken" in results:
+                next_token = results["nextPageToken"]
+            else:
+                done = True
 
-        return CaseInsensitiveDict(**{ playlist["snippet"]["title"] : playlist["id"] for playlist in results["items"] })
+        return CaseInsensitiveDict(
+            **{playlist["snippet"]["title"]: playlist["id"] for playlist in playlists}
+        )
 
     ####################################################################################
-    def get_playlist_songs(self, playlist: str) -> dict:
-        playlists = self.get_playlists()
-        if playlist not in playlists:
-            raise Exception(f"ERROR: invalid playlist provided: {playlist}\n")
+    def get_playlist_songs(self, playlist: str) -> list:
+        """Query YouTube for all songs in a provided public playlist. Further details
+        on response structure are found in the API documentation:
+        https://developers.google.com/youtube/v3/docs/playlistItems/list
 
-        # Set maxResults to 50.  If playlists are larger than this number, need to
-        # check if nextPageToken is set.  If its not empty, need to continue making
-        # queries til it is.  Provide in the query as nextPageToke = value.
-        return self.youtube.playlistItems().list(  # type: ignore
-            maxResults=50,
-            part="snippet,contentDetails,id,status",
-            playlistId=playlists[playlist],
-        ).execute()
+        Args:
+            playlist (str): The playlist to query.
 
-    ####################################################################################
-    async def load_playlist(self, playlist: str) -> None:
-        songs = self.get_playlist_songs(playlist)
+        Raises:
+            Exception: Raised if invalid playlist provided.
 
-        for song in songs["items"]:
-            await self.queue.put(Song(song))
+        Returns:
+            list: List containing information of all retreived songs.
+        """
+        try:
+            playlists = self.get_playlists()
+        except Exception as err:
+            raise Exception(f"Error getting songs for playlist: {err}\n") from err
+
+        done = False
+        next_token = ""
+        songs = []
+        while not done:
+            results = (
+                self.youtube.playlistItems()  # type: ignore
+                .list(
+                    maxResults=25,
+                    pageToken=next_token,
+                    part="snippet,contentDetails,id,status",
+                    playlistId=playlists[playlist],
+                )
+                .execute()
+            )
+            songs = songs + results["items"]
+            if "nextPageToken" in results:
+                next_token = results["nextPageToken"]
+            else:
+                done = True
+
+        return songs
 
     ####################################################################################
     async def on_ready(self) -> None:
@@ -129,8 +152,8 @@ class PuckBotClient(commands.Bot):
             f"{guild.name}(id: {guild.id})"
         )
 
-        members = "\n - ".join([member.name for member in guild.members])
-        print(f"Guild Members:\n - {members}")
+        members = "\n\t- ".join([member.name for member in guild.members])
+        print(f"Guild Members:\n\t- {members}\n")
 
         await self.change_presence(
             activity=discord.Activity(

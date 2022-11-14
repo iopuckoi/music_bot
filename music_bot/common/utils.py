@@ -193,6 +193,24 @@ async def load_extensions(bot: PuckBotClient, cog_path: str) -> None:
 
 
 ########################################################################################
+def pretty_dict(ugly_dict: str) -> str:
+    """Format a dict nicely for logging purposes.
+
+    Args:
+        ugly_dict (str): The ugly dict.
+
+    Returns:
+        str: The pretty dict.
+    """
+    try:
+        value = json.dumps(json.loads(ugly_dict), indent=4, sort_keys=True)
+    except Exception:
+        value = ugly_dict
+
+    return value
+
+
+########################################################################################
 def validate_log_level(value: str) -> int:
     """Validate the provided log level.
 
