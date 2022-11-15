@@ -778,6 +778,8 @@ class Song:
 
 
 ########################################################################################
+# TODO: In the future, explore asyncio.PriorityQueue to be able to add items based on
+# TODO:  priority order vs. FIFO.
 class SongQueue(asyncio.Queue):
     """Subclass of asyncio queue to create a song queue for the bot."""
 
