@@ -45,13 +45,9 @@ class PuckCog(commands.Cog):
         self.__bot = bot
 
     ####################################################################################
-    @commands.Cog.listener()
-    async def on_ready(self):
-        """Method called once the bot is ready."""
-        print("Bot is now online!\n")
-
-    ####################################################################################
     #                             Special Cog Methods                                  #
+    #       More info about Cogs and their special methods can be found here:          #
+    #     https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#cog         #
     ####################################################################################
     async def cog_before_invoke(self, ctx: commands.Context) -> None:
         """A special method that acts as a cog local pre-invoke hook.
@@ -67,8 +63,15 @@ class PuckCog(commands.Cog):
         self.bot.loop.create_task(self.audio_state.stop())
 
     ####################################################################################
-    #                                 Bot Commands                                     #
+    #                                 Cog Listeners                                    #
     ####################################################################################
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Method called once the bot is ready."""
+        print("Bot is now online!\n")
+
+    ####################################################################################
+    #                                 Bot Commands                                     #
     ####################################################################################
     # @commands.command(name="queue")
     # async def _queue(self, ctx: commands.Context, *, page: int = 1):
@@ -97,17 +100,6 @@ class PuckCog(commands.Cog):
     #     await ctx.send(embed=embed)
 
     ####################################################################################
-    @join.before_invoke
-    @play.before_invoke
-    async def ensure_audio_state(self, ctx: commands.Context):
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            raise commands.CommandError("You are not connected to any voice channel.")
-
-        if ctx.voice_client:
-            if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise commands.CommandError("Bot is already in a voice channel.")
-
-    ####################################################################################
     # def add
 
     ####################################################################################
@@ -129,7 +121,6 @@ class PuckCog(commands.Cog):
     @commands.command(name="join", invoke_without_subcommand=True)
     async def join(self, ctx: commands.Context):
         """Joins a voice channel."""
-
         destination = ctx.author.voice.channel
         if self.audio_state.voice:
             await self.audio_state.voice.move_to(destination)
@@ -142,7 +133,6 @@ class PuckCog(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def leave(self, ctx: commands.Context):
         """Clears the queue and leaves the voice channel."""
-
         if not self.audio_state.voice:
             return await ctx.send("Not connected to any voice channel.")
 
@@ -195,9 +185,8 @@ class PuckCog(commands.Cog):
         Args:
             ctx (commands.Context): The command context.
         """
-
         if not self.audio_state.is_playing and self.audio_state.voice.is_playing():
-            self.audio_state.voice.pause()
+            self.audio_state.voice.pause()  # type: ignore
             await ctx.message.add_reaction("⏯")
 
     ####################################################################################
@@ -233,13 +222,22 @@ class PuckCog(commands.Cog):
         Args:
             ctx (commands.Context): The command context.
         """
-
-        if not self.audio_state.is_playing and self.audio_state.voice.is_paused():
-            self.audio_state.voice.resume()
+        if not self.audio_state.is_playing and self.audio_state.voice.is_paused():  # type: ignore
+            self.audio_state.voice.resume()  # type: ignore
             await ctx.message.add_reaction("⏯")
 
     ####################################################################################
-    # def skip
+    @commands.command(name="skip", help="Skip the current song.")
+    @commands.has_permissions(manage_guild=True)
+    async def skip(self, ctx: commands.Context) -> None:
+        """Skip the currently queued song.
+
+        Args:
+            ctx (commands.Context): The command context.
+        """
+        if self.audio_state.is_playing:
+            self.audio_state.voice.stop()  # type: ignore
+            await ctx.send(f"Skipping {self.audio_state.current.title}")  # type: ignore
 
     ####################################################################################
     # @commands.command(name="stop", help="Stops the song")
@@ -249,6 +247,19 @@ class PuckCog(commands.Cog):
     #         await voice_client.stop()
     #     else:
     #         await ctx.send("The bot is not playing anything at the moment.")
+
+    ####################################################################################
+    #                             Instance Methods                                     #
+    ####################################################################################
+    @join.before_invoke
+    @play.before_invoke
+    async def ensure_audio_state(self, ctx: commands.Context):
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            raise commands.CommandError("You are not connected to any voice channel.")
+
+        if ctx.voice_client:
+            if ctx.voice_client.channel != ctx.author.voice.channel:
+                raise commands.CommandError("Bot is already in a voice channel.")
 
 
 ########################################################################################

@@ -441,7 +441,7 @@ class AudioState:
         Returns:
             bool: True if active song playing, else False.
         """
-        if self.voice and self.current:
+        if self.voice is not None and self.current is not None:
             return True
 
         return False
@@ -623,7 +623,7 @@ class CaseInsensitiveDict(MutableMapping):
         return len(self._store)
 
     def __repr__(self):
-        return str(dict(self.items()))
+        return pretty_dict(str(dict(self.items())))
 
     def __setitem__(self, key, value):
         # Use the lowercased key for lookups, but store the actual
@@ -791,7 +791,7 @@ class SongQueue(asyncio.Queue):
 
         return self._queue[item]  # type: ignore
 
-    def __iter__(self):
+    def __iter__(self):  # type: ignore
         return self._queue.__iter__()  # type: ignore
 
     def __len__(self):
