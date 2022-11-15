@@ -16,29 +16,31 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 
+from music_bot.client import PuckBotClient
 from music_bot.common.exceptions import CaseInsensitiveDictError, VoiceError, YTDLError
+from music_bot.common.utils import pretty_dict
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
-    YTDL_OPTIONS = {
-        "format": "bestaudio/best",
-        "extractaudio": True,
-        "audioformat": "mp3",
-        "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
-        "restrictfilenames": True,
-        "noplaylist": True,
-        "nocheckcertificate": True,
-        "ignoreerrors": False,
-        "logtostderr": False,
-        "quiet": True,
-        "no_warnings": True,
-        "default_search": "auto",
-        "source_address": "0.0.0.0",
-    }
-
     FFMPEG_OPTIONS = {
         "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
         "options": "-vn",
+    }
+
+    YTDL_OPTIONS = {
+        "audioformat": "mp3",
+        "default_search": "auto",
+        "extractaudio": True,
+        "format": "bestaudio/best",
+        "ignoreerrors": False,
+        "logtostderr": False,
+        "no_warnings": True,
+        "nocheckcertificate": True,
+        "noplaylist": True,
+        "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
+        "quiet": True,
+        "restrictfilenames": True,
+        "source_address": "0.0.0.0",
     }
 
     ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
@@ -53,32 +55,257 @@ class YTDLSource(discord.PCMVolumeTransformer):
     ):
         super().__init__(source, volume)
 
-        self.requester = ctx.author
         self.channel = ctx.channel
         self.data = data
+        self.requester = ctx.author
 
-        self.uploader = data.get("uploader")
-        self.uploader_url = data.get("uploader_url")
-        date = data.get("upload_date")
-        self.upload_date = date[6:8] + "." + date[4:6] + "." + date[0:4]
-        self.title = data.get("title")
-        self.thumbnail = data.get("thumbnail")
-        self.description = data.get("description")
-        self.duration = self.parse_duration(int(data.get("duration")))
-        self.tags = data.get("tags")
-        self.url = data.get("webpage_url")
-        self.views = data.get("view_count")
-        self.likes = data.get("like_count")
-        self.dislikes = data.get("dislike_count")
-        self.stream_url = data.get("url")
+        # Validate and set class members.
+        for field in (
+            "data",
+            "description",
+            "dislikes",
+            "duration",
+            "likes",
+            "tags",
+            "thumbnail",
+            "title",
+            "upload_date",
+            "uploader",
+            "uploader_url",
+            "url",
+            "webpage_url",
+        ):
+            value = data.get(field)
+            if value is None:
+                raise YTDLError(f"Unable to get field {field} from YTDL.")
+
+            setattr(self, field, value)
 
     def __str__(self):
-        return "**{0.title}** by **{0.uploader}**".format(self)
+        return f"**{self.title}** by **{self.uploader}**"
 
+    ####################################################################################
+    #                                  Properties                                      #
+    ####################################################################################
+    @property
+    def channel(self) -> discord.abc.MessageableChannel:
+        """Channel associated with the context.
+
+        Returns:
+            discord.abc.MessageableChannel: Channel associated with the context.
+        """
+        return self.__channel
+
+    @channel.setter
+    def channel(self, channel: discord.abc.MessageableChannel):
+        self.__channel = channel
+
+    ####################################################################################
+    @property
+    def data(self) -> dict:
+        """Metadata dictionary pulled from YouTube.
+
+        Returns:
+            dict: Metadata dictionary pulled from YouTube.
+        """
+        return self.__data
+
+    @data.setter
+    def data(self, data: dict):
+        self.__data = data
+
+    ####################################################################################
+    @property
+    def description(self) -> str:
+        """Description of the video.
+
+        Returns:
+            str: Description of the video.
+        """
+        return self.__description
+
+    @description.setter
+    def description(self, description: str):
+        self.__description = description
+
+    ####################################################################################
+    @property
+    def duration(self) -> str:
+        """Length of the video.
+
+        Returns:
+            str: Length of the video.
+        """
+        return self.__duration
+
+    @duration.setter
+    def duration(self, duration: int):
+        self.__duration = self.parse_duration(duration)
+
+    ####################################################################################
+    @property
+    def requester(self) -> Union[discord.Member, discord.User]:
+        """Requester associated with the context.
+
+        Returns:
+            discord.abc.MessageableChannel: Requester associated with the context.
+        """
+        return self.__requester
+
+    @requester.setter
+    def requester(self, requester: Union[discord.Member, discord.User]):
+        self.__requester = requester
+
+    ####################################################################################
+    @property
+    def tags(self) -> list:
+        """Metadata tags for the video.
+
+        Returns:
+            list: "Metadata tags for the video.
+        """
+        return self.__tags
+
+    @tags.setter
+    def tags(self, tags: list):
+        self.__tags = tags
+
+    ####################################################################################
+    @property
+    def thumbnail(self) -> str:
+        """Url of the video thumbnail.
+
+        Returns:
+            str: Url of the video thumbnail.
+        """
+        return self.__thumbnail
+
+    @thumbnail.setter
+    def thumbnail(self, thumbnail: str):
+        self.__thumbnail = thumbnail
+
+    ####################################################################################
+    @property
+    def title(self) -> str:
+        """Title of the video.
+
+        Returns:
+            str: Title of the video.
+        """
+        return self.__title
+
+    @title.setter
+    def title(self, title: str):
+        self.__title = title
+
+    ####################################################################################
+    @property
+    def uploader(self) -> str:
+        """Uploader of the video.
+
+        Returns:
+            str: Uploader of the video.
+        """
+        return self.__uploader
+
+    @uploader.setter
+    def uploader(self, uploader: str):
+        self.__uploader = uploader
+
+    ####################################################################################
+    @property
+    def upload_date(self) -> str:
+        """Upload date of the video.
+
+        Returns:
+            str: Upload date of the video.
+        """
+        return self.__upload_date
+
+    @upload_date.setter
+    def upload_date(self, upload_date: str):
+        self.__upload_date = (
+            upload_date[6:8] + "." + upload_date[4:6] + "." + upload_date[0:4]
+        )
+
+    ####################################################################################
+    @property
+    def uploader_url(self) -> str:
+        """Url of the channel of the uploader of the video.
+
+        Returns:
+            str: Url of the channel of the uploader of the video.
+        """
+        return self.__uploader_url
+
+    @uploader_url.setter
+    def uploader_url(self, uploader_url: str):
+        self.__uploader_url = uploader_url
+
+    ####################################################################################
+    @property
+    def url(self) -> str:
+        """Streaming url of the video.
+
+        Returns:
+            str: Streaming url of the video.
+        """
+        return self.__url
+
+    @url.setter
+    def url(self, url: str):
+        self.__url = url
+
+    ####################################################################################
+    @property
+    def views(self) -> int:
+        """View count for the video.
+
+        Returns:
+            int: View count for the video.
+        """
+        return self.__views
+
+    @views.setter
+    def views(self, views: int):
+        self.__views = views
+
+    ####################################################################################
+    @property
+    def webpage_url(self) -> str:
+        """Url of the video.
+
+        Returns:
+            str: Url of the video.
+        """
+        return self.__webpage_url
+
+    @webpage_url.setter
+    def webpage_url(self, webpage_url: str):
+        self.__webpage_url = webpage_url
+
+    ####################################################################################
+    #                                Class Methods                                     #
+    ####################################################################################
+    @classmethod
+    async def test(cls):
+        # TODO: remove
+        loop = asyncio.get_event_loop()
+
+        partial = functools.partial(
+            cls.ytdl.extract_info, "https://youtu.be/CdqoNKCCt7A", download=False
+        )
+        processed_info = await loop.run_in_executor(None, partial)
+
+        import pprint
+
+        pprint.pprint(processed_info)
+
+    ####################################################################################
     @classmethod
     async def create_source(
         cls, ctx: commands.Context, url: str, loop: asyncio.AbstractEventLoop = None
-    ):
+    ) -> YTDLSource:
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, url, download=False)
@@ -94,35 +321,49 @@ class YTDLSource(discord.PCMVolumeTransformer):
             while info is None:
                 try:
                     info = processed_info["entries"].pop(0)
-                except IndexError:
-                    raise YTDLError(f"Couldn't retrieve any matches for {url}:")
+                except IndexError as exc:
+                    raise YTDLError(
+                        f"Couldn't retrieve any matches for {url}:"
+                    ) from exc
 
         return cls(
             ctx, discord.FFmpegPCMAudio(info["url"], **cls.FFMPEG_OPTIONS), data=info
         )
 
+    ####################################################################################
+    #                               Static Methods                                     #
+    ####################################################################################
     @staticmethod
-    def parse_duration(duration: int):
+    def parse_duration(duration: int) -> str:
+        """Parse the video duration into a string.
+
+        Args:
+            duration (int): Duration of the video in seconds.
+
+        Returns:
+            str: Reformatted duration string.
+        """
+        # Convert integer duration into days/hours/minurs/seconds.
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
 
-        duration = []
+        parsed = []
         if days > 0:
-            duration.append("{} days".format(days))
+            parsed.append(f"{days} days")
         if hours > 0:
-            duration.append("{} hours".format(hours))
+            parsed.append(f"{hours} hours")
         if minutes > 0:
-            duration.append("{} minutes".format(minutes))
+            parsed.append(f"{minutes} minutes")
         if seconds > 0:
-            duration.append("{} seconds".format(seconds))
+            parsed.append(f"{seconds} seconds")
 
-        return ", ".join(duration)
+        return ", ".join(parsed)
 
 
 ########################################################################################
 class AudioState:
-    def __init__(self, bot: commands.Bot, ctx: commands.Context):
+    def __init__(self, bot: PuckBotClient, ctx: commands.Context):
         self.bot = bot
         self.ctx = ctx
 
@@ -152,12 +393,58 @@ class AudioState:
 
     ####################################################################################
     @property
+    def bot(self) -> PuckBotClient:
+        """Discord client associated with the AudioState.
+
+        Returns:
+            PuckBotClient: Discord client associated with the AudioState.
+        """
+        return self._bot
+
+    @bot.setter
+    def bot(self, bot: PuckBotClient):
+        self._bot = bot
+
+    ####################################################################################
+    @property
+    def ctx(self) -> commands.Context:
+        """Command context associated with the AudioState.
+
+        Returns:
+            commands.Context: Command context associated with the AudioState.
+        """
+        return self._ctx
+
+    @ctx.setter
+    def ctx(self, ctx: commands.Context):
+        self._ctx = ctx
+
+    ####################################################################################
+    @property
     def current(self) -> Union[Song, None]:
+        """The Song object currently tasked.
+
+        Returns:
+            Union[Song, None]: The Song object currently tasked.
+        """
         return self._current
 
     @current.setter
     def current(self, current: Union[Song, None]):
         self._current = current
+
+    ###################################################################################
+    @property
+    def is_playing(self) -> bool:
+        """Check if there is currently a song playing.
+
+        Returns:
+            bool: True if active song playing, else False.
+        """
+        if self.voice and self.current:
+            return True
+
+        return False
 
     ####################################################################################
     @property
@@ -188,7 +475,7 @@ class AudioState:
         """Discord voice channel client.
 
         Returns:
-            Union[discord.VoiceClient, None]: "Discord voice channel client.
+            Union[discord.VoiceClient, None]: Discord voice channel client.
         """
         return self._voice
 
@@ -206,10 +493,7 @@ class AudioState:
         self._volume = volume
 
     ####################################################################################
-    # @property
-    # def is_playing(self) -> bool:
-    #     return self.voice and self.current
-
+    #                               Instance Methods                                   #
     ####################################################################################
     async def audio_player_task(self):
         while True:
@@ -254,7 +538,7 @@ class AudioState:
                     self.current.source = source
 
             # self.current.source.volume = self._volume
-            self.voice.play(self.current.source, after=self.play_next_song)
+            self.voice.play(self.current.source, after=self.play_next_song())
             await self.current.source.channel.send(embed=self.current.create_embed())
 
             # Await the next song to get queued.
@@ -346,10 +630,13 @@ class CaseInsensitiveDict(MutableMapping):
         # key alongside the value.
         self._store[key.lower()] = (key, value)
 
-    # Copy is required
+    ####################################################################################
+    #                             Instance Methods                                     #
+    ####################################################################################
     def copy(self) -> CaseInsensitiveDict:
         return CaseInsensitiveDict(self._store.values())
 
+    ####################################################################################
     def lower_items(self):
         """Like iteritems(), but with all lowercase keys."""
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
@@ -359,6 +646,9 @@ class CaseInsensitiveDict(MutableMapping):
 class Formatter(logging.Formatter):
     """Subclass Formatter to custom format logging messages."""
 
+    ####################################################################################
+    #                             Instance Methods                                     #
+    ####################################################################################
     def format(self, record):
         # ANSI escape codes for colors:
         # black = "\x1b[30;20m"
@@ -396,20 +686,12 @@ class Song:
     """Object to hold metadata related to a song."""
 
     def __init__(self, song: dict):
-        self.thumbnail = song["snippet"]["thumbnails"]["high"]["url"]
         self.title = song["snippet"]["title"]
         self.video_id = song["snippet"]["resourceId"]["videoId"]
         self.url = f"https://youtu.be/{self.video_id}"
 
-    # def __repr__(self):
-    # TODO: get prety-dict from work code for this, create dict of all members
-    # return str(dict(self.items()))
-
-    # __slots__ = ("source", "requester", "thumbnail", "title", "video_id")
-
-    # def __init__(self, source: YTDLSource):
-    #     self.source = source
-    #     self.requester = source.requester
+    def __repr__(self):
+        return pretty_dict(str(vars(self)))
 
     ####################################################################################
     #                                  Properties                                      #
@@ -426,20 +708,6 @@ class Song:
     @source.setter
     def source(self, source: YTDLSource):
         self.__source = source
-
-    ####################################################################################
-    @property
-    def thumbnail(self) -> str:
-        """URL of the video thumbnail.
-
-        Returns:
-            str: URL of the video thumbnail.
-        """
-        return self.__thumbnail
-
-    @thumbnail.setter
-    def thumbnail(self, thumbnail: str):
-        self.__thumbnail = thumbnail
 
     ####################################################################################
     @property
@@ -484,6 +752,8 @@ class Song:
         self.__url = url
 
     ####################################################################################
+    #                             Instance Methods                                     #
+    ####################################################################################
     def create_embed(self) -> discord.Embed:
         """Embed track information into Discord.
 
@@ -497,13 +767,13 @@ class Song:
                 color=discord.Color.blurple(),
             )
             .add_field(name="Duration", value=self.source.duration)
-            # .add_field(name="Requested by", value=self.requester.mention)
+            .add_field(name="Requested by", value=self.source.requester.mention)
             .add_field(
                 name="Uploader",
                 value=f"[{self.source.uploader}]({self.source.uploader_url})",
             )
             .add_field(name="URL", value=f"[Click]({self.source.url})")
-            .set_thumbnail(url=self.thumbnail)
+            .set_thumbnail(url=self.source.thumbnail)
         )
 
 
@@ -513,21 +783,28 @@ class SongQueue(asyncio.Queue):
 
     def __getitem__(self, item) -> list:
         if isinstance(item, slice):
-            return list(itertools.islice(self._queue, item.start, item.stop, item.step))
+            return list(
+                itertools.islice(self._queue, item.start, item.stop, item.step)  # type: ignore
+            )
 
-        return self._queue[item]
+        return self._queue[item]  # type: ignore
 
     def __iter__(self):
-        return self._queue.__iter__()
+        return self._queue.__iter__()  # type: ignore
 
     def __len__(self):
         return self.qsize()
 
+    ####################################################################################
+    #                             Instance Methods                                     #
+    ####################################################################################
     def clear(self):
-        self._queue.clear()
+        self._queue.clear()  # type: ignore
 
+    ####################################################################################
     def remove(self, index: int):
-        del self._queue[index]
+        del self._queue[index]  # type: ignore
 
+    ####################################################################################
     def shuffle(self):
-        random.shuffle(self._queue)
+        random.shuffle(self._queue)  # type: ignore

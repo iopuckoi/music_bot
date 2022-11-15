@@ -61,6 +61,7 @@ class PuckCog(commands.Cog):
 
     ####################################################################################
     async def cog_unload(self):
+        """A special method that is called when the cog gets removed."""
         self.bot.loop.create_task(self.audio_state.stop())
 
     ####################################################################################
@@ -89,17 +90,41 @@ class PuckCog(commands.Cog):
     ####################################################################################
     @commands.command(name="play")
     async def _play(self, ctx: commands.Context):
-        """Plays a song.
-        If there are songs in the queue, this will be queued until the
+        """Plays a song.  If there are songs in the queue, this will be queued until the
         other songs finished playing.
-        This command automatically searches from various sites if no URL is provided.
-        A list of these sites can be found here: https://rg3.github.io/youtube-dl/supportedsites.html
         """
 
         if not self.audio_state.voice:
             await ctx.invoke(self._join)
 
         self.audio_state.play()
+
+    ####################################################################################
+    @commands.command(name="queue")
+    async def _queue(self, ctx: commands.Context, *, page: int = 1):
+        """Shows the player's queue.
+        You can optionally specify the page to show. Each page contains 10 elements.
+        """
+
+        if len(ctx.voice_state.songs) == 0:
+            return await ctx.send("Empty queue.")
+
+        items_per_page = 10
+        pages = math.ceil(len(ctx.voice_state.songs) / items_per_page)
+
+        start = (page - 1) * items_per_page
+        end = start + items_per_page
+
+        queue = ""
+        for i, song in enumerate(ctx.voice_state.songs[start:end], start=start):
+            queue += "`{0}.` [**{1.source.title}**]({1.source.url})\n".format(
+                i + 1, song
+            )
+
+        embed = discord.Embed(
+            description="**{} tracks:**\n\n{}".format(len(ctx.voice_state.songs), queue)
+        ).set_footer(text="Viewing page {}/{}".format(page, pages))
+        await ctx.send(embed=embed)
 
     ####################################################################################
     # @commands.command(name="pause")

@@ -10,7 +10,6 @@ from typing import Union
 
 # Third party imports.
 from dotenv import load_dotenv
-from music_bot.client import PuckBotClient
 
 
 ########################################################################################
@@ -170,26 +169,6 @@ def init_argparse() -> argparse.ArgumentParser:
     )
 
     return parser
-
-
-########################################################################################
-async def load_extensions(bot: PuckBotClient, cog_path: str) -> None:
-    """Load all cogs into the bot.
-
-    Args:
-        bot (PuckBotClient): Bot client.
-        cog_path (str): Path to all cogs.
-    """
-    bot.logger.info("Loading extensions:")
-    for filename in os.listdir(cog_path):
-        if filename == "__init__.py":
-            continue
-
-        if filename.endswith(".py"):
-            # cut off the .py from the file name
-            bot.logger.info(f"  ...loading cog : {filename}")
-            cog_package = cog_path[2:].replace("/", ".")
-            await bot.load_extension(f"{cog_package}.{filename[:-3]}")
 
 
 ########################################################################################

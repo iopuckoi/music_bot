@@ -1,5 +1,6 @@
 # Standard library imports.
 import logging
+import os
 import sys
 
 # Third party imports.
@@ -136,6 +137,24 @@ class PuckBotClient(commands.Bot):
                 done = True
 
         return songs
+
+    ########################################################################################
+    async def load_extensions(self, cog_path: str) -> None:
+        """Load all cogs into the bot.
+
+        Args:
+            cog_path (str): Path to all cogs.
+        """
+        self.logger.info("Loading extensions:")
+        for filename in os.listdir(cog_path):
+            if filename == "__init__.py":
+                continue
+
+            if filename.endswith(".py"):
+                # Cut off the .py from the file name.
+                self.logger.info(f"  ...loading cog : {filename}")
+                cog_package = cog_path[2:].replace("/", ".")
+                await self.load_extension(f"{cog_package}.{filename[:-3]}")
 
     ####################################################################################
     async def on_ready(self) -> None:

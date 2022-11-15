@@ -8,8 +8,8 @@ import discord
 import googleapiclient.discovery
 
 from music_bot.client import PuckBotClient
-from music_bot.common.classes import Formatter, SongQueue
-from music_bot.common.utils import get_config, init_argparse, load_extensions
+from music_bot.common.classes import Formatter, YTDLSource
+from music_bot.common.utils import get_config, init_argparse
 
 ########################################################################################
 #                                 Script entrypoint.                                   #
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         """Main bot entrypoint."""
         async with bot:
             # bot.loop.create_task(background_task())
-            await load_extensions(bot, "./music_bot/cogs")
+            await bot.load_extensions("./music_bot/cogs")
 
             for cog_name in bot.cogs:
                 logger.info(f"Cog - {cog_name}")
@@ -98,8 +98,8 @@ if __name__ == "__main__":
             # # bot.queue.clear()
 
             # print(bot.audio_state.queue)
-
-            # sys.exit()
+            await YTDLSource.test()
+            sys.exit()
             await bot.start(config["token"])
 
     # Run the bot.
