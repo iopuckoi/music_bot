@@ -129,7 +129,11 @@ def get_config(args: argparse.Namespace) -> dict:
         "channel_id": channel_id,
         "developer_key": developer_key,
         "guild": guild,
+        "playlist_regex": re.compile(r"[&?]list=(?P<playlist_id>[^&]+)"),
         "token": token,
+        "video_regex": re.compile(
+            r"^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?(?P<video_id>[^#\&\?]*).*"
+        ),
     }
 
 
