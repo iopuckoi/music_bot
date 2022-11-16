@@ -1,4 +1,7 @@
 # Third party imports.
+import random
+from os.path import dirname
+
 from discord.ext import commands
 
 from music_bot.client import PuckBotClient
@@ -100,7 +103,18 @@ class PuckCog(commands.Cog):
     #     await ctx.send(embed=embed)
 
     ####################################################################################
-    # def add
+    @commands.command(name="add", help="Add a song or a playlist to the queue.")
+    async def add(self, ctx: commands.Context, url: str) -> None:
+        result = self.bot.config["playlist_regex"].search(url)
+        # Process as a playlist.
+        if result:
+            cnt = await self._load(playlist_id=result.group("playlist_id"))
+
+        # Process as a song.
+        else:
+            cnt = await self._load(song_url=url)
+
+        await ctx.send(f"Loaded {cnt} songs into the queue.")
 
     ####################################################################################
     @commands.command(name="clear", help="Clear all songs in the queue.")
@@ -116,6 +130,21 @@ class PuckCog(commands.Cog):
 
     ####################################################################################
     # def inject
+
+    ####################################################################################
+    @commands.command(name="jerk", help="Shut up, jerk.")
+    async def jerk(self, ctx: commands.Context):
+        """Joins a voice channel."""
+        with open(
+            file=f"{dirname(__file__)}/../files/jerk_city.txt",
+            mode="r",
+            encoding="utf-8",
+        ) as jrk:
+            lines = []
+            for line in jrk:
+                lines.append(line)
+
+            await ctx.send(random.choice(lines))
 
     ####################################################################################
     @commands.command(name="join", invoke_without_subcommand=True)
@@ -167,14 +196,27 @@ class PuckCog(commands.Cog):
             ctx (commands.Context): The command context.
             playlist (str): Title of the playlist.
         """
-        songs = self.bot.get_playlist_songs(playlist)
+        cnt = await self._load(playlist=playlist)
+        await ctx.send(f"Loaded {cnt} songs into the queue.")
 
+    ####################################################################################
+    async def _load(self, **kwargs) -> int:
+        """Load songs into the queue by playlist name, playlist id, or song url.
+
+        Returns:
+            int: Number of songs added to the queue.
+        """
         cnt = 0
+        if "song_url" in kwargs:
+            songs = self.bot.get_song(**kwargs)
+        else:
+            songs = self.bot.get_playlist_songs(**kwargs)
+
         for song in songs:
             await self.audio_state.queue.put(Song(song))
             cnt += 1
 
-        await ctx.send(f"Loaded {cnt} songs into the queue.")
+        return cnt
 
     ####################################################################################
     @commands.command(name="pause", help="Pause the current song.")
