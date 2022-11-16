@@ -16,7 +16,6 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 
-from music_bot.client import PuckBotClient
 from music_bot.common.exceptions import CaseInsensitiveDictError, VoiceError, YTDLError
 from music_bot.common.utils import pretty_dict
 
@@ -293,7 +292,12 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = asyncio.get_event_loop()
 
         partial = functools.partial(
-            cls.ytdl.extract_info, "https://youtu.be/CdqoNKCCt7A", download=False
+            cls.ytdl.extract_info,
+            "https://youtu.be/CdqoNKCCt7A",
+            download=False
+            #     cls.ytdl.extract_info,
+            #     "https://www.youtube.com/playlist?list=PLKZOur5nlyjjzyhlzHkHYaIsOP9lpD6LA",
+            #     download=False,
         )
         processed_info = await loop.run_in_executor(None, partial)
 
@@ -363,7 +367,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 ########################################################################################
 class AudioState:
-    def __init__(self, bot: PuckBotClient, ctx: commands.Context):
+    def __init__(self, bot: commands.Bot, ctx: commands.Context):
         self.bot = bot
         self.ctx = ctx
 
@@ -393,16 +397,16 @@ class AudioState:
 
     ####################################################################################
     @property
-    def bot(self) -> PuckBotClient:
+    def bot(self) -> commands.Bot:
         """Discord client associated with the AudioState.
 
         Returns:
-            PuckBotClient: Discord client associated with the AudioState.
+            commands.Bot: Discord client associated with the AudioState.
         """
         return self._bot
 
     @bot.setter
-    def bot(self, bot: PuckBotClient):
+    def bot(self, bot: commands.Bot):
         self._bot = bot
 
     ####################################################################################

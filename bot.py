@@ -98,7 +98,8 @@ if __name__ == "__main__":
             # # bot.queue.clear()
 
             # print(bot.audio_state.queue)
-            await YTDLSource.test()
+            # await YTDLSource.test()
+            # bot.get_song(song_url="https://www.youtube.com/watch?v=sxAszMMHhDM")
             sys.exit()
             await bot.start(config["token"])
 
