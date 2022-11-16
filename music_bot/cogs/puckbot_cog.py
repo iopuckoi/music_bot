@@ -61,7 +61,7 @@ class PuckCog(commands.Cog):
         self.audio_state = AudioState(self.bot, ctx)
 
     ####################################################################################
-    async def cog_unload(self):
+    async def cog_unload(self) -> None:
         """A special method that is called when the cog gets removed."""
         self.bot.loop.create_task(self.audio_state.stop())
 
