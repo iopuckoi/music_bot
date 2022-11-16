@@ -144,7 +144,7 @@ class PuckCog(commands.Cog):
             for line in jrk:
                 lines.append(line)
 
-            await ctx.send(random.choice(lines))
+            await ctx.send(random.choice(lines), tts=True)
 
     ####################################################################################
     @commands.command(name="join", invoke_without_subcommand=True)
