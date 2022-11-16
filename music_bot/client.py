@@ -9,6 +9,7 @@ import googleapiclient.discovery
 from discord.ext import commands
 
 from music_bot.common.classes import CaseInsensitiveDict
+from music_bot.common.exceptions import PuckBotClientError
 
 
 class PuckBotClient(commands.Bot):
@@ -97,13 +98,14 @@ class PuckBotClient(commands.Bot):
         )
 
     ####################################################################################
-    def get_playlist_songs(self, playlist: str) -> list:
+    def get_playlist_songs(self, playlist: str = "", playlist_id: str = "") -> list:
         """Query YouTube for all songs in a provided public playlist. Further details
         on response structure are found in the API documentation:
         https://developers.google.com/youtube/v3/docs/playlistItems/list
 
         Args:
-            playlist (str): The playlist to query.
+            playlist (str, optional): A playlist title. Defaults to "".
+            playlist_id (str, optional): A playlist id. Defaults to "".
 
         Raises:
             Exception: Raised if invalid playlist provided.
@@ -111,10 +113,18 @@ class PuckBotClient(commands.Bot):
         Returns:
             list: List containing information of all retreived songs.
         """
-        try:
-            playlists = self.get_playlists()
-        except Exception as err:
-            raise Exception(f"Error getting songs for playlist: {err}\n") from err
+        # If playlist_id was not provided, attempt to get from provided playlist name.
+        if not playlist_id:
+            if not playlist:
+                raise PuckBotClientError("Must provide a playlist title or id.\n")
+
+            try:
+                playlists = self.get_playlists()
+
+            except Exception as err:
+                raise Exception(f"Error getting songs for playlist: {err}\n") from err
+
+            playlist_id = playlists[playlist]
 
         done = False
         next_token = ""
@@ -126,7 +136,7 @@ class PuckBotClient(commands.Bot):
                     maxResults=25,
                     pageToken=next_token,
                     part="snippet,contentDetails,id,status",
-                    playlistId=playlists[playlist],
+                    playlistId=playlist_id,
                 )
                 .execute()
             )
@@ -137,6 +147,38 @@ class PuckBotClient(commands.Bot):
                 done = True
 
         return songs
+
+    ########################################################################################
+    def get_song(self, song_url: str = "") -> list:
+        """Get a song from a video url.
+
+        Args:
+            song_url (str, optional): YouTube video url. Defaults to "".
+
+        Raises:
+            PuckBotClientError: Raised if input argument missing.
+            PuckBotClientError: Raised if the video id could not be extracted.
+
+        Returns:
+            list: A list of one item, the requested song.
+        """
+        if not song_url:
+            raise PuckBotClientError("Must provide a song url.\n")
+
+        result = self.config["video_regex"].search(song_url)
+        if result:
+            results = (
+                self.youtube.videos()  # type: ignore
+                .list(
+                    part="snippet,contentDetails,id,status",
+                    id=result.group("video_id"),
+                )
+                .execute()
+            )
+
+            return results["items"]
+
+        raise PuckBotClientError("Could not extract video id from url.\n")
 
     ########################################################################################
     async def load_extensions(self, cog_path: str) -> None:
