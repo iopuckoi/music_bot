@@ -69,7 +69,7 @@ class PuckCog(commands.Cog):
     #                                 Cog Listeners                                    #
     ####################################################################################
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         """Method called once the bot is ready."""
         print("Bot is now online!\n")
 
@@ -101,10 +101,15 @@ class PuckCog(commands.Cog):
     #         description="**{} tracks:**\n\n{}".format(len(ctx.voice_state.songs), queue)
     #     ).set_footer(text="Viewing page {}/{}".format(page, pages))
     #     await ctx.send(embed=embed)
-
     ####################################################################################
     @commands.command(name="add", help="Add a song or a playlist to the queue.")
     async def add(self, ctx: commands.Context, url: str) -> None:
+        """Add a song or a playlist to the queue.
+
+        Args:
+            ctx (commands.Context): The command context.
+            url (str): Url to load into the queue.
+        """
         result = self.bot.config["playlist_regex"].search(url)
         # Process as a playlist.
         if result:
@@ -115,6 +120,7 @@ class PuckCog(commands.Cog):
             cnt = await self._load(song_url=url)
 
         await ctx.send(f"Loaded {cnt} songs into the queue.")
+        await ctx.invoke(self.play)
 
     ####################################################################################
     @commands.command(name="clear", help="Clear all songs in the queue.")
@@ -133,22 +139,26 @@ class PuckCog(commands.Cog):
 
     ####################################################################################
     @commands.command(name="jerk", help="Shut up, jerk.")
-    async def jerk(self, ctx: commands.Context):
-        """Joins a voice channel."""
+    async def jerk(self, ctx: commands.Context) -> None:
+        """Act like a stupid jerk.
+
+        Args:
+            ctx (commands.Context): The command context.
+        """
+        lines = []
         with open(
             file=f"{dirname(__file__)}/../files/jerk_city.txt",
             mode="r",
             encoding="utf-8",
         ) as jrk:
-            lines = []
             for line in jrk:
                 lines.append(line)
 
-            await ctx.send(random.choice(lines), tts=True)
+        await ctx.send(random.choice(lines), tts=True)
 
     ####################################################################################
     @commands.command(name="join", invoke_without_subcommand=True)
-    async def join(self, ctx: commands.Context):
+    async def join(self, ctx: commands.Context) -> None:
         """Joins a voice channel."""
         destination = ctx.author.voice.channel
         if self.audio_state.voice:
@@ -160,10 +170,15 @@ class PuckCog(commands.Cog):
     ####################################################################################
     @commands.command(name="leave", aliases=["disconnect"])
     @commands.has_permissions(manage_guild=True)
-    async def leave(self, ctx: commands.Context):
-        """Clears the queue and leaves the voice channel."""
+    async def leave(self, ctx: commands.Context) -> None:
+        """Clears the queue and leaves the voice channel.
+
+        Args:
+            ctx (commands.Context): The command context.
+        """
         if not self.audio_state.voice:
-            return await ctx.send("Not connected to any voice channel.")
+            await ctx.send("Not connected to any voice channel.")
+            return
 
         await self.audio_state.stop()
 
@@ -295,7 +310,7 @@ class PuckCog(commands.Cog):
     ####################################################################################
     @join.before_invoke
     @play.before_invoke
-    async def ensure_audio_state(self, ctx: commands.Context):
+    async def ensure_audio_state(self, ctx: commands.Context) -> None:
         if not ctx.author.voice or not ctx.author.voice.channel:
             raise commands.CommandError("You are not connected to any voice channel.")
 
