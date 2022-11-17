@@ -1,7 +1,9 @@
 # Third party imports.
 import random
 from os.path import dirname
+from typing import Union
 
+import discord
 from discord.ext import commands
 
 from music_bot.client import PuckBotClient
@@ -160,12 +162,27 @@ class PuckCog(commands.Cog):
     @commands.command(name="join", invoke_without_subcommand=True)
     async def join(self, ctx: commands.Context) -> None:
         """Joins a voice channel."""
-        destination = ctx.author.voice.channel
-        if self.audio_state.voice:
+        import pprint
+
+        pprint.pprint(ctx)
+        print("\n\n")
+        pprint.pprint(ctx.__dict__)
+        print("\n\n")
+        pprint.pprint(ctx.author.__dict__)
+        print("\n\n")
+
+        if not self.ensure_voice_channel(ctx.author):
+            raise commands.CommandError("You are not connected to any voice channel.")
+        # TODO: dump the ctx.author and figure out why voice and/or channel are none?
+
+        destination = ctx.author.voice.channel  # type: ignore
+
+        # If already connected to a voice channel, move to the new voice channel.
+        if self.audio_state.voice is not None:
             await self.audio_state.voice.move_to(destination)
             return
 
-        self.audio_state.voice = await destination.connect()
+        self.audio_state.voice = await destination.connect()  # type: ignore
 
     ####################################################################################
     @commands.command(name="leave", aliases=["disconnect"])
@@ -242,7 +259,7 @@ class PuckCog(commands.Cog):
         Args:
             ctx (commands.Context): The command context.
         """
-        if not self.audio_state.is_playing and self.audio_state.voice.is_playing():
+        if not self.audio_state.is_playing and self.audio_state.voice.is_playing():  # type: ignore
             self.audio_state.voice.pause()  # type: ignore
             await ctx.message.add_reaction("⏯")
 
@@ -253,7 +270,7 @@ class PuckCog(commands.Cog):
         other songs finished playing.
         """
 
-        if not self.audio_state.voice:
+        if self.audio_state.voice is None:
             await ctx.invoke(self.join)
 
         self.audio_state.play()
@@ -293,17 +310,24 @@ class PuckCog(commands.Cog):
             ctx (commands.Context): The command context.
         """
         if self.audio_state.is_playing:
-            self.audio_state.voice.stop()  # type: ignore
+            self.audio_state.skip()
             await ctx.send(f"Skipping {self.audio_state.current.title}")  # type: ignore
+        else:
+            await ctx.send("The bot is not playing anything at the moment.")
 
     ####################################################################################
-    # @commands.command(name="stop", help="Stops the song")
-    # async def stop(self, ctx: commands.Context):
-    #     voice_client = ctx.message.guild.voice_client
-    #     if voice_client.is_playing():
-    #         await voice_client.stop()
-    #     else:
-    #         await ctx.send("The bot is not playing anything at the moment.")
+    @commands.command(name="stop", help="Stop playing the queue.")
+    async def stop(self, ctx: commands.Context) -> None:
+        """Stop playing the queue.
+
+        Args:
+            ctx (commands.Context): The command context.
+        """
+        if self.audio_state.is_playing:
+            self.audio_state.stop()
+            await ctx.send(f"Skipping {self.audio_state.current.title}")  # type: ignore
+        else:
+            await ctx.send("The bot is not playing anything at the moment.")
 
     ####################################################################################
     #                             Instance Methods                                     #
@@ -311,12 +335,32 @@ class PuckCog(commands.Cog):
     @join.before_invoke
     @play.before_invoke
     async def ensure_audio_state(self, ctx: commands.Context) -> None:
-        if not ctx.author.voice or not ctx.author.voice.channel:
+        if not self.ensure_voice_channel(ctx.author):
             raise commands.CommandError("You are not connected to any voice channel.")
 
         if ctx.voice_client:
-            if ctx.voice_client.channel != ctx.author.voice.channel:
+            if ctx.voice_client.channel != ctx.author.voice.channel:  # type: ignore
                 raise commands.CommandError("Bot is already in a voice channel.")
+
+    ####################################################################################
+    def ensure_voice_channel(self, author: Union[discord.Member, discord.User]) -> bool:
+        """Validate a ctx.author and ensure there is an associated voice channel.
+
+        Args:
+            author (Union[discord.Member, discord.User]): The context author.
+
+        Returns:
+            bool: True if author is a Guild member and there is a voice channel,
+                else False.
+        """
+        if isinstance(author, discord.Member):
+            if author.voice and isinstance(author.voice, discord.VoiceState):
+                if author.voice.channel and isinstance(
+                    author.voice.channel, discord.VoiceChannel
+                ):
+                    return True
+
+        return False
 
 
 ########################################################################################

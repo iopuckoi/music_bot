@@ -308,9 +308,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
     ####################################################################################
     @classmethod
     async def create_source(
-        cls, ctx: commands.Context, url: str, loop: asyncio.AbstractEventLoop = None
+        cls,
+        ctx: commands.Context,
+        url: str,
+        loop: Union[asyncio.AbstractEventLoop, None] = None,
     ) -> YTDLSource:
-        loop = loop or asyncio.get_event_loop()
+        if loop is None:
+            loop = asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, url, download=False)
         processed_info = await loop.run_in_executor(None, partial)
@@ -373,11 +377,11 @@ class AudioState:
 
         self.audio_player = None
         self.current = None
+        self.loop = asyncio.get_event_loop()
         self.next = asyncio.Event()
         self.queue = SongQueue()
         self.voice = None
 
-        self._loop = False
         self._volume = 0.5
 
     def __del__(self):
@@ -389,6 +393,11 @@ class AudioState:
     ####################################################################################
     @property
     def audio_player(self) -> Union[asyncio.Task, None]:
+        """The asynchronous audio task.
+
+        Returns:
+            Union[asyncio.Task, None]: The asynchronous audio task.
+        """
         return self._audio_player
 
     @audio_player.setter
@@ -452,11 +461,16 @@ class AudioState:
 
     ####################################################################################
     @property
-    def loop(self):
+    def loop(self) -> asyncio.AbstractEventLoop:
+        """The asynchronous event loop.
+
+        Returns:
+            asyncio.AbstractEventLoop: The asynchronous event loop.
+        """
         return self._loop
 
     @loop.setter
-    def loop(self, value: bool):
+    def loop(self, value: asyncio.AbstractEventLoop):
         self._loop = value
 
     ####################################################################################
@@ -542,10 +556,10 @@ class AudioState:
                     self.current.source = source
 
             # self.current.source.volume = self._volume
-            self.voice.play(self.current.source, after=self.play_next_song())
+            self.voice.play(self.current.source, after=self.play_next_song())  # type: ignore
             await self.current.source.channel.send(embed=self.current.create_embed())
 
-            # Await the next song to get queued.
+            # Await the next Event.
             await self.next.wait()
 
     ####################################################################################
@@ -554,16 +568,25 @@ class AudioState:
             self.audio_player = self.bot.loop.create_task(self.audio_player_task())
 
     ####################################################################################
-    def play_next_song(self, error=None):
+    def play_next_song(self, error=None) -> None:
+        """_summary_
+
+        Args:
+            error (_type_, optional): _description_. Defaults to None.
+
+        Raises:
+            VoiceError: _description_
+        """
         if error:
             raise VoiceError(str(error))
 
         self.next.set()
 
-    # ####################################################################################
-    # def skip(self):
-    #     if self.is_playing:
-    #         self.voice.stop()
+    ####################################################################################
+    def skip(self) -> None:
+        """Skip the currently playing song (if one is playing)."""
+        if self.is_playing and self.voice is not None:
+            self.voice.stop()
 
     ####################################################################################
     async def stop(self):

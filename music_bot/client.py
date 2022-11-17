@@ -162,6 +162,7 @@ class PuckBotClient(commands.Bot):
         Returns:
             list: A list of one item, the requested song.
         """
+        # TODO: make sure I'm getting url properly when this is called
         if not song_url:
             raise PuckBotClientError("Must provide a song url.\n")
 
