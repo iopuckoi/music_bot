@@ -60,7 +60,8 @@ class PuckCog(commands.Cog):
         Args:
             ctx (commands.Context): The cog context.
         """
-        self.audio_state = AudioState(self.bot, ctx)
+        if not hasattr(self, "audio_state"):
+            self.audio_state = AudioState(self.bot, ctx)
 
     ####################################################################################
     async def cog_unload(self) -> None:
@@ -162,23 +163,16 @@ class PuckCog(commands.Cog):
     @commands.command(name="join", invoke_without_subcommand=True)
     async def join(self, ctx: commands.Context) -> None:
         """Joins a voice channel."""
-        import pprint
-
-        pprint.pprint(ctx)
-        print("\n\n")
-        pprint.pprint(ctx.__dict__)
-        print("\n\n")
-        pprint.pprint(ctx.author.__dict__)
-        print("\n\n")
-
         if not self.ensure_voice_channel(ctx.author):
             raise commands.CommandError("You are not connected to any voice channel.")
-        # TODO: dump the ctx.author and figure out why voice and/or channel are none?
+
+        self.bot.logger.debug("JOIN: Attempting to join voice channel.")
 
         destination = ctx.author.voice.channel  # type: ignore
 
         # If already connected to a voice channel, move to the new voice channel.
         if self.audio_state.voice is not None:
+            self.bot.logger.debug("JOIN: Attempting to move voice channel.")
             await self.audio_state.voice.move_to(destination)
             return
 
@@ -228,8 +222,15 @@ class PuckCog(commands.Cog):
             ctx (commands.Context): The command context.
             playlist (str): Title of the playlist.
         """
-        cnt = await self._load(playlist=playlist)
-        await ctx.send(f"Loaded {cnt} songs into the queue.")
+        if not playlist:
+            await ctx.send("Must provide a playlist to command!")
+
+        else:
+            cnt = await self._load(playlist=playlist)
+            await ctx.send(f"Loaded {cnt} songs into the queue.")
+            print(
+                f"back in load, there are {self.audio_state.queue.qsize()} songs in the queue"
+            )
 
     ####################################################################################
     async def _load(self, **kwargs) -> int:
@@ -238,6 +239,7 @@ class PuckCog(commands.Cog):
         Returns:
             int: Number of songs added to the queue.
         """
+        self.bot.logger.debug("LOAD: Attempting to load songs.")
         cnt = 0
         if "song_url" in kwargs:
             songs = self.bot.get_song(**kwargs)
@@ -269,11 +271,14 @@ class PuckCog(commands.Cog):
         """Plays a song.  If there are songs in the queue, this will be queued until the
         other songs finished playing.
         """
-
         if self.audio_state.voice is None:
+            self.bot.logger.debug(
+                "PLAY: Not connected to voice channel, attempting connection.."
+            )
             await ctx.invoke(self.join)
 
         self.audio_state.play()
+        self.bot.logger.debug("PLAY: Attempting to play songs.")
 
     ####################################################################################
     @commands.command(name="playlists", help="List all available playlists.")
@@ -286,6 +291,22 @@ class PuckCog(commands.Cog):
         out = "\n\t".join(sorted(self.bot.get_playlists().keys()))
 
         await ctx.send(f"Available playlists:\n\t{out}\n")
+
+    ####################################################################################
+    @commands.command(name="queue", help="List all songs in the queue.")
+    async def queue(self, ctx: commands.Context) -> None:
+        """List all songs in the queue.
+
+        Args:
+            ctx (commands.Context): The cog context.
+        """
+        cnt = self.audio_state.queue.qsize()
+        if cnt:
+            await ctx.send(f"There are currently {cnt} songs in the queue.")
+            for song in self.audio_state.queue:
+                await ctx.send(f"- {song.title}")
+        else:
+            await ctx.send("There are currently no songs in the queue.")
 
     ####################################################################################
     @commands.command(name="resume", help="Resume the playlist.")
@@ -324,7 +345,7 @@ class PuckCog(commands.Cog):
             ctx (commands.Context): The command context.
         """
         if self.audio_state.is_playing:
-            self.audio_state.stop()
+            await self.audio_state.stop()
             await ctx.send(f"Skipping {self.audio_state.current.title}")  # type: ignore
         else:
             await ctx.send("The bot is not playing anything at the moment.")
@@ -335,6 +356,10 @@ class PuckCog(commands.Cog):
     @join.before_invoke
     @play.before_invoke
     async def ensure_audio_state(self, ctx: commands.Context) -> None:
+        self.bot.logger.debug(
+            "ENSURE_AUDIO_STATE: Attempting to ensure audio state object."
+        )
+
         if not self.ensure_voice_channel(ctx.author):
             raise commands.CommandError("You are not connected to any voice channel.")
 
@@ -353,6 +378,9 @@ class PuckCog(commands.Cog):
             bool: True if author is a Guild member and there is a voice channel,
                 else False.
         """
+        self.bot.logger.debug(
+            "ENSURE_VOICE_CHANNEL: Attempting to ensure voice channel."
+        )
         if isinstance(author, discord.Member):
             if author.voice and isinstance(author.voice, discord.VoiceState):
                 if author.voice.channel and isinstance(

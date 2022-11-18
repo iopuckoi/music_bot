@@ -317,22 +317,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
             loop = asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, url, download=False)
-        processed_info = await loop.run_in_executor(None, partial)
+        info = await loop.run_in_executor(None, partial)
 
-        if processed_info is None:
+        if info is None:
             raise YTDLError(f"Couldn't fetch url {url}.")
-
-        if "entries" not in processed_info:
-            info = processed_info
-        else:
-            info = None
-            while info is None:
-                try:
-                    info = processed_info["entries"].pop(0)
-                except IndexError as exc:
-                    raise YTDLError(
-                        f"Couldn't retrieve any matches for {url}:"
-                    ) from exc
 
         return cls(
             ctx, discord.FFmpegPCMAudio(info["url"], **cls.FFMPEG_OPTIONS), data=info
@@ -351,7 +339,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         Returns:
             str: Reformatted duration string.
         """
-        # Convert integer duration into days/hours/minurs/seconds.
+        # Convert integer duration into days/hours/minutes/seconds.
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
@@ -387,6 +375,9 @@ class AudioState:
     def __del__(self):
         if self.audio_player is not None:
             self.audio_player.cancel()
+
+    def __repr__(self):
+        return pretty_dict(str(vars(self)))
 
     ####################################################################################
     #                                  Properties                                      #
@@ -514,49 +505,68 @@ class AudioState:
     #                               Instance Methods                                   #
     ####################################################################################
     async def audio_player_task(self):
+        print("before loop")
         while True:
             self.next.clear()
 
+            print("checking queue")
+            print(self.queue.empty())
             # Make sure the queue is not empty.
             if self.queue.empty():
                 self.bot.loop.create_task(self.stop())
 
                 return
 
-            if not self.loop:
-                # Try to get the next song within 3 minutes. If no song will be added to
-                # the queue in time, the player will disconnect due to performance
-                # reasons.
-                try:
-                    async with timeout(180):  # 3 minutes
-                        self.current = await self.queue.get()
+            print("queue not empty, checking loop")
+            # if not self.loop:
+            #     # Try to get the next song within 3 minutes. If no song will be added to
+            #     # the queue in time, the player will disconnect due to performance
+            #     # reasons.
+            #     try:
+            #         async with timeout(180):  # 3 minutes
+            #             self.current = await self.queue.get()
+            #             print("current = " + self.current)
+            #             self.queue.task_done()
 
-                except asyncio.TimeoutError:
-                    self.bot.loop.create_task(self.stop())
+            #     except asyncio.TimeoutError:
+            #         self.bot.loop.create_task(self.stop())
 
-                    return
-
+            #         return
+            self.current = await self.queue.get()
+            print(self.current)
+            self.queue.task_done()
+            print("loop is good, checking current song")
+            print(self.current)
             # Make sure we have a song ready to play.
             if self.current is None:
                 self.bot.loop.create_task(self.stop())
 
                 return
 
+            print("current song okay")
             # Try and create a download source for the song.
-            async with self.ctx.typing():
-                try:
-                    source = await YTDLSource.create_source(
-                        self.ctx, self.current.url, loop=self.bot.loop
-                    )
-                except YTDLError as err:
-                    await self.ctx.send(
-                        f"An error occurred while processing this request: {err}"
-                    )
-                else:
-                    self.current.source = source
+            # async with self.ctx.typing():
+            #     try:
+            #         source = await YTDLSource.create_source(
+            #             self.ctx, self.current.url, loop=self.bot.loop
+            #         )
+            #     except YTDLError as err:
+            #         await self.ctx.send(
+            #             f"An error occurred while processing this request: {err}"
+            #         )
+            #     else:
+            #         self.current.source = source
+            self.current.source = await YTDLSource.create_source(
+                self.ctx, self.current.url, loop=self.bot.loop
+            )
 
             # self.current.source.volume = self._volume
+            print("made it here")
+            import pprint
+
+            pprint.pprint(self.voice)
             self.voice.play(self.current.source, after=self.play_next_song())  # type: ignore
+            print("Now I'm here")
             await self.current.source.channel.send(embed=self.current.create_embed())
 
             # Await the next Event.
@@ -590,6 +600,7 @@ class AudioState:
 
     ####################################################################################
     async def stop(self):
+        print("CLEAARING THE CUNBHELIJGBHNLEKSJHGBNELKH")
         self.queue.clear()
 
         if self.voice:
@@ -828,6 +839,7 @@ class SongQueue(asyncio.Queue):
     #                             Instance Methods                                     #
     ####################################################################################
     def clear(self):
+        print("CLEAARING THE CUNBHELIJGBHNLEKSJHGBNELKH")
         self._queue.clear()  # type: ignore
 
     ####################################################################################

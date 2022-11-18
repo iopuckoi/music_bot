@@ -85,16 +85,18 @@ if __name__ == "__main__":
             # Standard library imports.
             # import pprint
 
+            # from music_bot.common.classes import Song, SongQueue
+
+            # queue = SongQueue()
             # songs = bot.get_playlist_songs("gamenight")
             # for song in songs:
-            #     print(song["snippet"]["title"])
+            #     await queue.put(Song(song))
 
-            # await bot.load_playlist("gamenight")
-            # while not bot.audio_state.queue.empty():
-            #     song = await bot.audio_state.queue.get()
+            # while not queue.empty():
+            #     song = await queue.get()
             #     print(f"getting song {song.title}")
-            #     bot.audio_state.queue.task_done()
-            # # print(bot.queue)
+            #     queue.task_done()
+            # print(queue)
             # # bot.queue.clear()
 
             # print(bot.audio_state.queue)
